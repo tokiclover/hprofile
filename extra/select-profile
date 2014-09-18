@@ -1,0 +1,32 @@
+#!/bin/bash
+
+hprofile=$(type -p hprofile)
+if test -z "${hprofile}" ; then
+	hprofile="/usr/local/sbin/hprofile"
+fi
+
+display_zenity_menu () {
+
+	items=""
+	for p in $@ ; do
+		items="${items} FALSE ${p}"
+	done
+				
+	zenity  --title "Select power profile" --list --radiolist \
+					--height 210 \
+					--column "" --column "Profile" ${items}
+}
+
+display_help () {
+	echo "Usage: select-profile <type>"
+	echo " - Requires zenity (part of Gnome), sudo and hprofile"
+}
+
+if test -z "${1}" ; then
+	display_help
+	exit 1
+fi
+
+profiles=$(${hprofile} -l "${1}")
+selected=$(display_zenity_menu ${profiles})
+test "${selected}" != "" && ${hprofile} "${1}.${selected}"

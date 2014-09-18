@@ -1,0 +1,2 @@
+event=ac_adapter.AC..00000080.00000001
+action=/etc/acpi/actions/ac_in

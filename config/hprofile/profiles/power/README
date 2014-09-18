@@ -1,0 +1,4 @@
+This is a sample power profile setup. It's different from other profiles in
+that there are no configuration files to be switched. All the magic happens
+in the start scripts, found in the scripts/ directory. ptest is still used to 
+determine the current profile of course.

@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# This script will be run when the profile named "second_profile" is started.
+
+echo "Starting ${0%.*}"

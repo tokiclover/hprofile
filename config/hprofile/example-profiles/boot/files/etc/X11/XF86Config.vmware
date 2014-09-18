@@ -1,0 +1,118 @@
+# VMware SVGA
+
+Section "Module"
+    Load        "dbe"  	# Double buffer extension
+    SubSection  "extmod"
+    EndSubSection
+    Load        "type1"
+    Load        "freetype"
+#    Load       "glx"
+EndSection
+
+Section "Files"
+    RgbPath	"/usr/X11R6/lib/X11/rgb"
+#    FontPath   "/usr/X11R6/lib/X11/fonts/local/"
+    FontPath   "/usr/X11R6/lib/X11/fonts/misc/"
+    FontPath   "/usr/X11R6/lib/X11/fonts/75dpi/:unscaled"
+    FontPath   "/usr/X11R6/lib/X11/fonts/100dpi/:unscaled"
+    FontPath   "/usr/X11R6/lib/X11/fonts/Type1/"
+    FontPath   "/usr/X11R6/lib/X11/fonts/Speedo/"
+    FontPath   "/usr/X11R6/lib/X11/fonts/75dpi/"
+    FontPath   "/usr/X11R6/lib/X11/fonts/100dpi/"
+#    ModulePath "/usr/X11R6/lib/modules"
+EndSection
+
+Section "ServerFlags"
+#    Option NoTrapSignals
+EndSection
+
+Section "InputDevice"
+    Identifier	"Keyboard1"
+    Driver	"Keyboard"
+    Option "AutoRepeat" "500 30"
+    Option "XkbRules"	"xfree86"
+    Option "XkbModel"	"pc104"
+    Option "XkbLayout"	"gb"
+    Option "XkbCompat"	""
+EndSection
+
+Section "InputDevice"
+    Identifier	"Mouse1"
+    Driver	"mouse"
+    Option "Protocol"    "ps/2"
+    Option "Device"      "/dev/mouse"
+    Option "ZAxisMapping"	"4 5"
+		Option	"A"	"5"
+#    Option "Emulate3Buttons"
+#    Option "Emulate3Timeout"    "50"
+#    Option "ChordMiddle"
+EndSection
+
+Section "Monitor"
+    Identifier  "vmware"
+    VendorName "VMware, Inc"
+    HorizSync 1-10000
+    VertRefresh 1-10000
+
+    ModeLine "640x480" 100 640 700 800 900 480 500 600 700
+    ModeLine "800x600" 100 800 900 1000 1100 600 700 800 900
+    ModeLine "1024x768" 100 1024 1100 1200 1300 768 800 900 1000
+    ModeLine "1152x864" 100 1152 1200 1300 1400 864 900 1000 1100
+    ModeLine "1152x900" 100 1152 1200 1300 1400 900 1000 1100 1200
+    ModeLine "1280x1024" 100 1280 1300 1400 1500 1024 1100 1200 1300
+    ModeLine "1376x1032" 100 1376 1400 1500 1600 1032 1100 1200 1300
+    ModeLine "1600x1200" 100 1600 1700 1800 1900 1200 1300 1400 1500
+    ModeLine "2364x1773" 100 2364 2400 2500 2600 1773 1800 1900 2000
+EndSection
+
+Section "Device"
+    Identifier  "VMware SVGA"
+    Driver	"vmware"
+            
+EndSection
+
+Section "Screen"
+    Identifier  "Screen 1"
+    Device      "VMware SVGA"
+    Monitor     "vmware"
+
+    # Don't specify DefaultColorDepth unless you know what you're
+    # doing. It will override the driver's preferences which can
+    # cause the X server not to run if the host doesn't support the
+    # depth.
+    
+    Subsection "Display"
+        # VGA mode: better left untouched
+        Depth       4
+        Modes       "640x480"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       8
+	Modes "1024x768"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       15
+	Modes "1024x768"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       16
+	Modes "1024x768"
+        ViewPort    0 0
+    EndSubsection
+    Subsection "Display"
+        Depth       24
+	Modes "1024x768"
+        ViewPort    0 0
+    EndSubsection
+EndSection
+
+Section "ServerLayout"
+    Identifier  "Simple Layout"
+    Screen "Screen 1"
+    InputDevice "Mouse1" "CorePointer"
+    InputDevice "Keyboard1" "CoreKeyboard"
+EndSection
+

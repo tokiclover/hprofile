@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# This script will be called before configuration files have been switched for
+# this profile. It will be given a command line argument of the name of the
+# profile being applied. If it exits with a non-zero error code, the profile
+# will not be applied and hprofile will abort.
+
+echo "About to start profile ${1}"

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+# This script should echo only the name of the profile that should be used
+# It should assume it is called before any other scripts. In particular, it
+# cannot rely on environment variables set in /etc/profile or elsewhere. The
+# script may assume it will be run as root.
+
+# Assume we want to keep the profile we're using, until we change it :-)
+current="$(hprofile -c net 2>/dev/null)"
+
+if test "${?}" = "0" ; then
+	echo "${current}"
+fi

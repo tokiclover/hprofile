@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# This script will be run when the profile named "first_profile" is stopped.
+
+echo "Stopping ${0%.*}"

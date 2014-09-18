@@ -1,0 +1,5 @@
+#!/bin/bash
+
+# This script will be called when the profile is stopped. This can happen if
+# hprofile -s is called, or if another profile is applied. The script will be
+# called with a command line argument of the name of the profile being applied.

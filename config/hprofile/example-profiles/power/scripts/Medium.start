@@ -1,0 +1,4 @@
+#!/bin/bash
+
+speedfreq -p 1000
+echo "11" > /proc/acpi/asus/brn

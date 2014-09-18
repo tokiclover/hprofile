@@ -1,0 +1,14 @@
+#!/bin/sh
+
+echo "Copying the skeleton /etc/hprofile directory to /etc..." 
+cp -Rdi config/hprofile /etc
+echo
+
+echo "Copying hprofile scripts to /usr/local/sbin..."
+cp -i scripts/* /usr/local/sbin
+echo
+
+echo "Installation finished. If you want to apply a 'boot' profile at startup,"
+echo "and possibly change runlevels based on that profile, you should configure"
+echo "this manually according to your system setup. Please see the files in the"
+echo "rc-scripts directory for hints."

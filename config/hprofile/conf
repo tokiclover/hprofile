@@ -1,0 +1,16 @@
+#!/bin/bash
+# Configuration source for hprofile
+
+# Global configuration options
+cdir="/etc/hprofile"                 # hprofile config directory
+runlevels="${cdir}/runlevels"        # Runlevels associated with each profile
+logfile="/var/log/hprofile"	         # Global log file.
+profile_test="/usr/local/sbin/hpdet" # Command used to determine the profile
+															
+# User-level profiles.
+userprofiles=1			                 # Set to 0 to disable user profiles.
+shadowfile="/etc/shadow"             # The shadow file, used to verify which users have
+				                             #  valid logins (i.e. have passwords).
+passwdfile="/etc/passwd"             # Used to find the home directories for those 
+                                     #  users.
+

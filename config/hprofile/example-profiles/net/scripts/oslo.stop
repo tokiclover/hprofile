@@ -1,0 +1,13 @@
+#!/bin/bash
+
+started=0
+
+if /etc/init.d/net.eth1 status | grep "started" >/dev/null ; then
+	started=1
+fi
+
+if test "${started}" = "1" ; then
+	/etc/init.d/net.eth1 stop
+fi
+
+modprobe -r eth1 2>/dev/null

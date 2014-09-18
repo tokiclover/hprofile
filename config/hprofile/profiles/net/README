@@ -1,0 +1,3 @@
+This is a sample network profile. It's similar to what I use to configure my
+wireless network card (found at eth1) to various hotspots. Notice the post-start
+and stop scripts which set wireless options.

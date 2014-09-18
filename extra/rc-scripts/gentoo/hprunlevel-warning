@@ -1,0 +1,13 @@
+#!/sbin/runscript
+# Copyright 1999-2002 Gentoo Technologies, Inc.
+# Distributed under the terms of the GNU General Public License, v2 or later
+
+
+start() {
+	profile=$(/usr/local/sbin/hpdet boot)
+	level=$(/usr/local/sbin/hprunlevel "${profile}")
+	ewarn "The current hardware profile, ${profile}, implies runlevel ${level}"
+}
+
+
+# vim:ts=4

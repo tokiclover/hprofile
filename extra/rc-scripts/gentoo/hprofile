@@ -1,0 +1,25 @@
+#!/sbin/runscript
+# Copyright 1999-2002 Gentoo Technologies, Inc.
+# Distributed under the terms of the GNU General Public License, v2 or later
+
+
+depend() {
+	before modules
+}
+
+start() {
+	profile=$(/usr/local/sbin/hpdet boot)
+	ebegin "Selecting hardware profile ${profile}"
+	/usr/local/sbin/hprofile boot
+	eend $?
+}
+
+stop() {
+	profile=$(/usr/local/sbin/hprofile -c boot)
+	ebegin "Stopping hardware profile ${profile}"
+	/usr/local/sbin/hprofile -s boot
+	eend $?
+}
+
+
+# vim:ts=4

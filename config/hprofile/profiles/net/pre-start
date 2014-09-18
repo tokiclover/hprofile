@@ -1,0 +1,12 @@
+#!/bin/bash
+
+# Forward the request to scripts in /etc/hprofile/profiles/power/scripts
+
+powerscript="/etc/hprofile/profiles/power/scripts/${1}"
+
+if test -x "${powerscript}" ; then
+	"${powerscript}" || exit 2
+ 	exit 0
+else
+	exit 1
+fi

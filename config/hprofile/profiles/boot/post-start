@@ -1,0 +1,4 @@
+#!/bin/bash
+
+# This script will be called after configuration files have been switched,
+# with a command line argument of the name of the profile being applied.

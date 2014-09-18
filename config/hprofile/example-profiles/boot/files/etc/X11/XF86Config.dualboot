@@ -1,0 +1,136 @@
+Section "Files"
+	RgbPath      	"/usr/X11R6/lib/X11/rgb"
+	ModulePath   	"/usr/X11R6/lib/modules"
+	FontPath    	 "/usr/X11R6/lib/X11/fonts/misc/"
+	FontPath     	"/usr/X11R6/lib/X11/fonts/Speedo/"
+	FontPath     	"/usr/X11R6/lib/X11/fonts/Type1/"
+	FontPath     	"/usr/X11R6/lib/X11/fonts/CID/"
+	FontPath     	"/usr/X11R6/lib/X11/fonts/75dpi/"
+	FontPath     	"/usr/X11R6/lib/X11/fonts/100dpi/"
+	FontPath     	"/usr/X11R6/lib/X11/fonts/truetype"
+EndSection
+
+Section "ServerFlags"
+ 	Option		"AllowMouseOpenFail"
+ # 	Option		"Pixmap"		"24"
+EndSection
+
+Section "Module"
+ 	Load         	"type1"
+	Load         	"speedo"
+  	Load        	"extmod"
+  	Load         	"freetype"
+  	Load         	"glx"
+ 	Load         	"dri"
+  	Load		"synaptics"
+EndSection
+
+Section "InputDevice"
+  Driver       "Keyboard"
+  Identifier   "Laptop Keyboard"
+  Option       "Protocol" "Standard"
+  Option       "XkbLayout" "gb"
+  Option       "XkbModel" "pc105"
+  Option       "XkbRules" "xfree86"
+EndSection
+
+
+Section "InputDevice"
+  Driver       	"synaptics"
+  Identifier   	"Trackpad"
+  Option       	"Device" 	"/dev/input/event2"
+  Option       	"Protocol" 	"auto-dev"
+  Option       	"LeftEdge" 	"1900"
+  Option	"RightEdge"	"5400"
+  Option	"TopEdge"	"1900"
+#  Option	"BottomEdge"	"4000"
+  Option  "BottomEdge" "5000"
+  Option	"FingerLow"	"25"
+  Option	"FingerHigh"	"30"
+  Option	"MaxTapTime"	"180"
+  Option	"MaxTapMove"	"220"
+  Option	"VertScrollDelta" "100"
+  Option	"MinSpeed"	"0.02"
+  Option	"MaxSpeed"	"0.18"
+  Option	"AccelFactor"	"0.0010"
+	Option	"UpDownScrolling" "0"
+	Option	"SHMConfig"	"on"  
+EndSection
+
+Section "InputDevice"
+  Driver       "mouse"
+  Identifier   "USB Mouse"
+  Option	   "Buttons" "6"
+  Option       "Device" "/dev/input/mouse1"
+  Option       "InputFashion" "Mouse"
+  Option       "Name" "Autodetection"
+  Option	   "Protocol" "ExplorerPS/2"
+  Option       "Vendor" "Sysp"
+  Option	   "ZAxisMapping" "5 6"
+EndSection
+
+
+Section "Monitor"
+  HorizSync    31-65
+  Identifier   "Laptop LCD Monitor"
+  ModelName    "1024X768@70HZ"
+  VendorName   "--> LCD"
+  VertRefresh  58-78
+	Option			 "DPMS"
+#  UseModes     "Laptop LCD Modes"
+EndSection
+
+
+#Section "Modes"
+#  Identifier   "Laptop LCD Modes"
+#  Modeline 	"1024x768" 69.35 1024 1040 1216 1400 768 768 778 802
+#  Modeline 	"1024x768" 79.55 1024 1040 1216 1400 768 768 778 802
+#  Modeline 	"640x480" 27.16 640 656 720 864 480 480 490 501
+#  Modeline 	"640x480" 31.15 640 656 720 864 480 480 490 501
+#EndSection
+
+
+Section "Screen"
+  DefaultDepth 24
+  SubSection "Display"
+    Depth      16
+    Modes      "1024x768" 
+  EndSubSection
+  SubSection "Display"
+    Depth      24
+    Modes      "1024x768" 
+  EndSubSection
+  Device       "Intel 855GM"
+  Identifier   "Laptop LCD Screen"
+  Monitor      "Laptop LCD Monitor"
+EndSection
+
+
+Section "Device"
+  BoardName    "855GM"
+  BusID        "0:2:0"
+  Driver       "i810"
+  Identifier   "Intel 855GM"
+  Screen       0
+  VendorName   "Intel"
+#  Videoram     16384
+  VideoRam	10000
+EndSection
+
+
+Section "ServerLayout"
+  Identifier   "Default Layout"
+  InputDevice  "Laptop keyboard" "CoreKeyboard"
+  InputDevice  "Trackpad" "SendCoreEvents"
+  InputDevice  "USB Mouse" "CorePointer"
+  Option       "Clone" "off"
+  Option       "Xinerama" "off"
+  Screen       "Laptop LCD Screen"
+EndSection
+
+Section "DRI"
+  Group      "video"
+   Mode       0660
+  Mode       0666
+EndSection
+

@@ -1,0 +1,93 @@
+#!/bin/bash
+
+# hprunlevel, part of hprofile, by Martin Aspeli <optilude@gmx.net>
+# Released under the GNU General Public License
+
+# hprunlevel is used to determine which runlevel corresponds to the current
+# "boot" profile. The file /etc/hprofile/runlevels is examined for lines 
+# containing the hardware profile (passed in as a command-line argument), 
+# followed by some whitespace, followed by a single digit. This digit 
+# (representing the runlevel) is echoed. If the runlevel cannot be determined, 
+# an empty string is echoed.
+
+VERSION="2.0b1"
+CONFIG="/etc/hprofile/conf"
+
+if test -r "${CONFIG}" ; then
+	source "${CONFIG}"
+else
+	echo "Could not find configuration file ${CONFIG}" >&2
+	exit 1
+fi
+
+print_help () {
+  echo "Usage: hprunlevel [-h | -v | <profile name>]"
+	echo
+	echo "    -h              Print this help message and exit"
+	echo "    -v              Print version and exit"
+	echo "    <profile name>  Name of the boot profile to find the runlevel for."
+	echo
+	echo "hprunlevel examines the file ${cdir}/runlevels to determine"
+	echo "the number of the runlevel associated with the boot profile "
+	echo "indicated by <profile name>."
+	echo
+	echo "If <profile name> argument is not given, 'hpdet boot' will be"
+	echo "called to attempt to automatically determine the boot profile."
+}
+
+print_version () {
+	echo "hprunlevel version ${VERSION}"
+}
+
+init () {
+	local opt
+	while getopts "hv" opt ; do
+		case "${opt}" in
+			h)
+				print_help
+				exit 0
+				;;
+			v)
+				print_version
+				exit 0
+				;;
+			*)
+				print_help
+				exit 1
+				;;
+		esac
+	done
+}
+
+get_boot_profile () {
+	local profile=${1}
+
+	# The runlevel is always determined by the "boot" profile - if no profile
+	# was given, run hpdet to try to determine the profile.
+	if test -z "${profile}" ; then
+		profile=$(${profile_test} boot)
+	fi
+
+	echo ${profile}
+}
+
+init ${@}
+
+boot_profile=$(get_boot_profile ${1})
+
+if test -z "${boot_profile}" ; then
+	echo "Could not determine profile, aborting." >&2
+	exit 2
+fi
+
+level=$(cat ${cdir}/runlevels | grep -m 1 "${boot_profile}" | 
+	sed 's/.*\([[:digit:]]\).*/\1/')
+
+if test -n "${level}" ; then
+	echo ${level}
+	exit 0
+else
+	echo "Could not find runlevel associated with boot profile ${boot_profile}." \
+					>&2
+	exit 1
+fi

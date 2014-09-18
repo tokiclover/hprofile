@@ -1,0 +1,4 @@
+#!/bin/bash
+
+speedfreq -p powersave
+echo "6" > /proc/acpi/asus/brn

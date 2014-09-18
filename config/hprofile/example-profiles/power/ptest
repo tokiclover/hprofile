@@ -1,0 +1,22 @@
+#!/bin/bash
+
+# This script should echo only the name of the profile that should be used
+# It should assume it is called before any other scripts. In particular, it
+# cannot rely on environment variables set in /etc/profile or elsewhere. The
+# script may assume it will be run as root.
+
+profile="AC"
+
+if test -f /proc/acpi/ac_adapter/AC0/state ; then
+	status="$(cat /proc/acpi/ac_adapter/AC0/state)"
+	case "${status}" in
+		*on-line)
+			profile="AC"
+			;;
+		*off-line)
+			profile="Battery"
+			;;
+	esac
+fi
+
+echo "${profile}"

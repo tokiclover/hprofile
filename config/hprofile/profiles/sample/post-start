@@ -1,0 +1,8 @@
+#!/bin/bash
+
+# This script will be called after configuration files have been switched for
+# this profile. It will be given a command line argument of the name of the
+# profile being applied. It may be easier to use profile-specific scripts in
+# the scripts/ directory instead.
+
+echo "Finished starting profile ${1}"

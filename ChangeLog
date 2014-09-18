@@ -1,0 +1,12 @@
+# hprofile change log
+
+*hprofile-2.0_beta2 (25 Dec 2003)
+
+	25 Dec 2003; Martin Aspeli <optilude@gmx.net>:
+	Fixed spurious log message when starting profiles that had already been
+	stopped.
+
+*hprofile-2.0_beta1 (23 Dec 2003)
+
+  23 Dec 2003; Martin Aspeli <optilude@gmx.net>:
+	Initial public release, version 2.0 beta 1.
