@@ -1,0 +1,11 @@
+#
+# $Header: hprofile.confd,v 2014/09/20 13:05:23 -tclover Exp $
+#
+# This variable is a list of profiles to start when starting the service
+#
+
+PROFILES="vga power"
+
+#
+# vim:fenc=utf-8:ft=gentoo-conf-d:ci:pi:sts=0:sw=4:ts=4:
+#
