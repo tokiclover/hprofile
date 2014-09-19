@@ -1,565 +1,343 @@
 #!/bin/bash
+#
+# Header: hprofile
+# Aythor:
+# 	Copyright (c) 2003-2004 Martin Aspeli <optilude@gmx/net>
+# 	Copyright (c) 2014 -tclover <tokiclover@gmail.com>
+# License: GPL-2
+#
 
-# hprofile, part of hprofile, by Martin Aspeli <optilude@gmx.net>
-# Released under the GNU General Public License
+shopt -qs nullglob
+shopt -qs extglob
 
-# hprofile is used to dynamically switch configuration files and run scripts
-# based on hardware, network or other changing configurations. Run hprofile -h
-# for more help.
+declare -A PKG
+PKG=(
+	[name]=hprofile
+	[version]=3.0
+	[confdir]=/etc/hprofile
+	[logfile]=/var/log/hprofile.log
+)
 
-# You may need sudo to be installed if user level profile start and stop scripts
-# are to work.
-
-VERSION="2.0b1"
-CONFIG="/etc/hprofile/conf"
-
-if test -r "${CONFIG}" ; then
-	source "${CONFIG}"
-else
-	echo "Could not find configuration file ${CONFIG}" >&2
-	exit 1
+if [[ -f "${PKG[confdir]}/${PKG[name]}.conf" ]]; then
+	source "${PKG[confdir]}/${PKG[name]}.conf"
+	for key in "${!HPROFILE[@]}"; do
+		PKG[$key]=${HPROFILE[$key]}
+	done
 fi
 
-print_help () {
-  echo "Usage: hprofile -h | -v | -t | -c <type> | -l <type> | -s <type> |"
-	echo "                -r <type> | <type> | <type>.<profile>"
-	echo
-	echo "    -h              Print this help message and exit"
-	echo "    -v              Print version and exit"
-	echo "    -t              Print all known profiles types and exit"
-	echo "    -c <type>       Print the current <type> profile and exit"
-	echo "    -p <type>       Print the previous <type> profile and exit"
-	echo "    -l <type>       Print all available <type> profiles and exit"
-	echo "    -s <type>       Stop the current <type> profile and exit"
-	echo "    -r <type>       Revert to the previous <type> profile"
-	echo "   <type>           Switch to the currently valid <type> profile"
-	echo "   <type>.<profile> Switch to the given <type> profile"
+function print-error {
+	echo -e "\e[1;31m* \e[0m${0##*/}: $@" >&2
 }
 
-print_version () {
-	echo "hprofile version ${VERSION}"
+function die {
+	local ret=$?
+	print-error "$@"
+	return $ret
 }
 
-# Process command line options and initialise
-# Arguments: $@ as passed to script
-init () {
-	local opt=""
-	local profile=""
-
-	while getopts "hvtc:p:l:s:r:" opt ; do
-		case "${opt}" in
-			h)
-				print_help
-				exit 0
-				;;
-			v)
-				print_version
-				exit 0
-				;;
-			t)
-				print_profile_types
-				exit 0
-				;;
-			c)
-				if ! verify_profile_type "${OPTARG}" ; then
-					echo "Invalid profile type ${OPTARG}" >&2
-					exit 2
-				fi
-
-				profile=$(get_current_profile "${OPTARG}")
-
-				if test -z "${profile}" ; then
-					echo "Unable to determine the current ${OPTARG} profile" >&2
-					exit 2
-				else
-					echo "${profile}"
-					exit 0
-				fi
-				;;
-			p)
-				if ! verify_profile_type "${OPTARG}" ; then
-					echo "Invalid profile type ${OPTARG}" >&2
-					exit 2
-				fi
-
-				profile=$(get_previous_profile "${OPTARG}")
-
-				if test -z "${profile}" ; then
-					echo "Unable to determine the previous ${OPTARG} profile" >&2
-					exit 2
-				else
-					echo "${profile}"
-					exit 0
-				fi
-				;;
-				l)
-				if ! verify_profile_type "${OPTARG}" ; then
-					echo "Invalid profile type ${OPTARG}" >&2
-					exit 2
-				fi
-
-				print_profiles "${OPTARG}"
-				exit ${?}
-				;;
-			s)	
-				if ! verify_profile_type "${OPTARG}" ; then
-					echo "Invalid profile type ${OPTARG}" >&2
-					exit 2
-				fi
-
-				if stop_current_profile "${OPTARG}" ; then
-					exit 0
-				else
-					log_message "Could not stop ${OPTARG} profile - unable to determine current profile"
-					echo "Unable to determine the current ${OPTARG} profile" >&2
-					exit 2
-				fi
-				;;
-			r)
-				if ! verify_profile_type "${OPTARG}" ; then
-					echo "Invalid profile type ${OPTARG}" >&2					
-				fi
-
-				revert_profile "${OPTARG}"
-				exit ${?}
-				;;
-			*)
-				print_help
-				exit 2
-				;;
-		esac
-	done
+function print-info {
+	echo -e "\e[1;32m \e[0m${0##*/}: $@"
 }
 
-# Log a message, with the current date/time to the log file
-# Arguments: message to log; log file to use (optional)
-log_message () {
-  local msg="${1}"
-	local file="${2}"
+function print-usage {
+	cat <<-EOH
+  ${PKG[name]}-${PKG[version]}
+  usage: ${PKG[name]} [options] <type>|<type>.<profile>
 
-	if test -z "${file}" ; then
-		file="${logfile}"
-	fi
+    -t, --type               Print all known profiles types and exit
+    -c, --current=<type>     Print the current <type> profile and exit
+    -p, --profile=<type>     Print the profile <type> that would be used
+    -P, --previous=<type>    Print the previous <type> profile and exit
+    -l, --list=<type>        Print all available <type> profiles and exit
+    -s, --stop=<type>        Stop the current <type> profile and exit
+    -r, --revert=<type>      Revert to the previous <type> profile
+    -u, --user=\$USER         Use a user profile instead of system wide
+    -h, --help               Print this help message and exit
+    -v, --version            Print version tring nd exit
+    -r, --revert=<type>[.<profile>] Revert <profile> profile type
 
-  echo "$(date) - ${msg}" >> "${file}"
-
+  <type>                     Switch to the currently valid <type> profile
+  <type>.<profile>           Switch to the given <type>.<profile> profile
+EOH
+exit ${1:-?}
 }
 
-# Verify that the given profile type is valid (i.e. it has a directory in 
-# /etc/hprofile/profiles.
-# Arguments: the profile type
-verify_profile_type () {
-
-	local profile_type="${1}"
-	local profile_dir="${cdir}/profiles/${profile_type}"
-
-	if test -x "${profile_dir}/ptest" -a -f "${profile_dir}/default" ; then
-		return 0
-	else
-		return 1
-	fi
+function print-version {
+	echo "${PKG[name]}-${PKG[version]}"
+	exit
 }
 
-# Print the profile to be used. This will call hpdet if no profile was
-# specified. If a profile type has a 'profiles' file constraining possible
-# profiles, verify against this; output nothing if an invalid profile is 
-# specified.
-# Arguments: the profile type (as specified by the user); the profile name
-#  (as specified as the user), or "" if no profile was specified.
-get_profile () {
+# @DESCRIPTION: Log a message, with the current date/time to the log file
+# @ARGUMENTS: <message to log> [<log-file>]
+function log-message {
+	[[ "${1}" ]] || return
 
-	local profile_type="${1}"
-	local profile_name="${2}"
-
-	local profile=""
-	local profiles_file="${cdir}/profiles/${profile_type}/profiles"
-
-	if test -n "${profile_name}" ; then
-		profile="${profile_name}"
-	else
-		profile=$(${profile_test} "${profile_type}")
-	fi
-
-	if test -r "${profiles_file}" ; then
-		if ! grep "${profile}" "${profiles_file}" >/dev/null ; then
-				profile=""
-		fi
-	fi
-
-	echo "${profile}"
+	test -n "${2}" -a -e "${2}" && echo "${PKG[name]}: ${1}" >> "${2}" ||
+		logger -p user.notice "${PKG[name]}: $@"
 }
 
-# Print the currently selected profile of the given type by examining the file
-# current in the profile directory. Return an error code and print nothing if the
-# state file does not exist.
-# Arguments: the profile type
-get_current_profile () {
-	local profile_type="${1}"
-	local state_file="${cdir}/profiles/${profile_type}/current"
+# @DESCRIPTION: Verify validity of a profile type is valid, i.e. it has a
+# directory in /etc/hprofile/profiles.
+# @ARGUMENTS: the profile type
+function verify-profile-type {
+	test "${#}" -eq 1 -a -n "${1}" || return
+	local dir="${PROFILE[dir]}/profiles/${1}"
+	test -e "${dir}"/ptest -o -f "${dir}"/profiles -o -f "${dir}"/default
+}
+
+# @DESCRIPTION: Print the profile to be used. This will call hpdet if no profile
+# was specified or invalid if not.
+# @Arguments: <type> <profile>
+function get-profile {
+	local dir="${PROFILE[dir]}/profiles/${1}" name="${2}"
+
+	test -z "${name}" -a -s "${dir}/ptest"   && name=$(run-script "${dir}/ptest")
+	test -z "${name}" -a -s "${dir}/default" && name=$(< "${dir}/default")
+
+	test -z "${name}" -a -s "${profiles}" &&
+		name=$(sed -nre '0,/^[a-zA-Z].*/p' "${profiles}")
+
+	echo "${name}"
+}
+
+# @DESCRIPTION: Print the currently selected profile
+# @ARGUMENTS: <type>
+function get-current-profile {
+	[[ "${1}" ]] || return
+	local file="${PROFILE[dir]}/profiles/${1}/current"
+
+	[[ -s "${file}" ]] && echo $(< "${file}")
+}
+
+# @DESCRIPTION: Print the previous profile
+# @ARGUMENTS: <type>
+function get-previous-profile {
+	[[ "${1}" ]] || return
+	local file="${PROFILE[dir]}/profiles/${1}/previous"
 	
-	if test -r "${state_file}" ; then
-		cat "${state_file}" | head -n 1
-		return 0
-	else
-		return 1
-	fi
+	[[ -s "${file}" ]] && echo $(< "${file}")
 }
 
-# Print the previous "different" profile of the given type by examining the file
-# previous in the profile directory. Return an error code and print nothing if the
-# state file does not exist.
-# Arguments: the profile type
-get_previous_profile () {
-	local profile_type="${1}"
-	local state_file="${cdir}/profiles/${profile_type}/previous"
-	
-	if test -r "${state_file}" ; then
-		cat "${state_file}" | head -n 1
-		return 0
-	else
-		return 1
+# @DESCRIPTION: run script passed as positional parameter 1
+# @ARGUMENTS: <script> <args>
+function run-script {
+	test "${#}" -ge 1 -a -s "${1}" || return
+	local head="${1%/*}" tail="${1##*/}" file="${1}"
+
+	if test "${tail%.start}" != "${tail}" -a -s "${head}/start"; then
+		function start {
+			source "${head}/start"
+		}
+	elif test "${tail%.stop}" != "${tail}" -a -s "${head}/stop"; then
+		function stop {
+			source "${head}/stop"
+		}
 	fi
+
+	if test "${tail%.start}" != "${tail}" -o "${tail%.stop}" != "${tail}"; then
+		local file name
+		for file in "${head}"/*([:alnum:])*.bash; do
+			[[ -s "${file}" ]] || continue
+			name=${file##*/}
+			function ${name%.bash} {
+				source "${file}"
+			}
+		done
+	fi
+
+	function script {
+		source "${file}"
+	}
+	shift
+	script "$@"
 }
 
-# "Stop" the current profile of the given type, by running its stop scripts
-# (global in the profile directory and local in users' home directories), 
-# and remove its statefile. Does nothing and returns an error code if the
-# profile type's statefile does not exist.
-# Arguments: the profile type to stop; the new profile (if any)
-stop_current_profile () {
+# @DESCRIPTION: Stop the current profile of the given type
+# @ARGUMENTS: <type> <profile>
+function stop-current-profile {
+	local dir="${PROFILE[dir]}/profiles/${1}"
+	local profile=$(get-current-profile "${1}")
 
-	local profile_type="${1}"
-	local new_profile="${2}"
-
-	local profile=$(get_current_profile "${profile_type}")
-
-	if test -z "${profile}" ; then
-		return 1
+	# Stop the *global* script and *profile* script if possible
+	if [[ -s "${dir}/scripts/${profile}.stop" ]]; then
+		run-script "${dir}/scripts/${profile}.stop" "${profile}" ||
+		print-error "failed to stop ${1}.${profile} profile"
+	fi
+	if [[ -s "${dir}"/post-stop ]]; then
+		run-script "${dir}"/post-stop "${profile}" ||
+		print-error "failed to stop ${1}"
 	fi
 
-	# Run the users' scripts first
-	local username=""
-				
-	# Try all usernames in /etc/shadow for users with a valid login
-	for username in $(grep -v "^[^:]*:[\*\!]" ${shadowfile} | \
-				sed 's/\(.*\):.*:.*:.*:.*:.*:.*:.*:.*/\1/') ; do
-
-		if test -n "${username}" ; then
-
-			# Find their home directory
-			local home_dir=$(grep "${username}" "${passwdfile}" | \
-									sed 's/^.*:.*:.*:.*:.*:\(.*\):.*$/\1/')
-									
-			if test -n "${home_dir}" ; then
-
-				# Run the script
-				local user_profile_dir="${home_dir}/.hprofile/profiles/${profile_type}"
-				local user_stop="${user_profile_dir}/stop"
-				local user_scripts_dir="${user_profile_dir}/scripts"
-
-				if test -x "${user_stop}" ; then
-					sudo -u "${username}" "${user_stop}" "${profile}"
-				fi
-
-				if test -x "${user_scripts_dir}/${profile}.stop" ; then
-					sudo -u "${username}" "${user_scripts_dir}/${profile}.stop"
-				fi
-				
-			fi
-		fi
-	done
-
-	# Then run the global scripts
-	local scripts_dir="${cdir}/profiles/${profile_type}/scripts"
-	local stop_script="${cdir}/profiles/${profile_type}/stop"
-
-	if test -x "${stop_script}" ; then
-		"${stop_script}" "${profile}"
-	fi
-
-	if test -x "${scripts_dir}/${profile}.stop" ; then
-		"${scripts_dir}/${profile}.stop"
-	fi
-
-	# Rename the file 'current' to 'previous'
-
-	# If we are going to start a new profile soon, and we already have a ".old" 
-	# file, and the new profile we're applying is the same as the current profile,
-	# then don't overwrite the current ".old" file so that we can still revert to
-	# the "previous" profile even if we apply the same profile twice.
-
-	local current_file="${cdir}/profiles/${profile_type}/current"
-	local prev_file="${cdir}/profiles/${profile_type}/previous"
-	
-	if test "${new_profile}" != "${profile}" -o ! -r "${prev_file}"; then
-		mv -f "${current_file}" "${prev_file}" ||
-				log_message "Warning: Could not rename state file ${current_file}"
-	fi
+	# Clean up current/previous profile files
+	echo              > "${PROFILE[dir]}/profiles/${1}/current"
+	echo "${profile}" > "${PROFILE[dir]}/profiles/${1}/previous"
 
 	return 0
 }
 
-# Save the current profile to 'current' in the profile directory.
-# Arguments: the profile type; the current profile
-save_current_profile () {
-	local profile_type="${1}"
-	local profile="${2}"
-
-	echo "${profile}" > "${cdir}/profiles/${profile_type}/current" ||
-		log_message "Could not save current ${profile_type} profile - write failed"
+# @DESCRIPTION: Save the current profile to 'current' in the profile directory.
+# @ARGUMENTS: <type> <profile>
+function save-current-profile {
+	echo "${2}" >"${PROFILE[dir]}/profiles/${1}/current"
 }
 
-# Revert to the previous profile of the given type
-# Arguments: the profile type
-revert_profile () {
+# @DESCRIPTION: Revert to the previous profile of the given type
+# @ARGUMENTS: <type>
+function revert-profile {
+	local profile=$(get-previous-profile "${1}")
 
-	local profile_type="${1}"
-	local previous_profile=$(get_previous_profile "${profile_type}")
-
-	if test -z "${previous_profile}" ; then
-		return 1
-	fi
-
-	apply_profile "${profile_type}" "${previous_profile}"
+	[[ "${profile}" ]] || return
+	apply-profile "${1}" "${profile}"
 }
 
-# Print all known profile types
-print_profile_types () {
-
-	local dir=""
-
-	for dir in $(find "${cdir}/profiles" -type d -maxdepth 1) ; do
-		if test -x "${dir}/ptest" -a -f "${dir}/default" ; then
-			echo "${dir##*/}"
-		fi
+# @DESCRIPTION: Print all known profile types
+function print-profile-types {
+	for dir in "${PROFILE[dir]}/profiles"/*([:alpha:])*; do
+		test -e "${dir}/ptest" -o -f "${dir}/profiles" -a -f "${dir}"/default &&
+			echo -n "${dir##*/} "
 	done
-
+	echo
+	exit
 }
 
-# Print all valid profiles of the given type
-# Arguments: the profile type
-print_profiles () {
+# @DESCRIPTION: Print all valid profiles of the given type
+# @ARGUMENTS: <type>
+function print-profiles {
+	local dir="${PROFILE[dir]}/profiles/${1}"
 
-	local profile_type="${1}"
-	local profile_dir="${cdir}/profiles/${profile_type}"
-	local profiles_file="${profile_dir}/profiles"
-	local files_dir="${profile_dir}/files"
-
-	if test -r "${profiles_file}" ; then
-		cat "${profiles_file}"
+	if [[ -s "${dir}/profiles" ]]; then
+		echo $(< "${dir}/profiles")
 	else
-
-		# This is not perfect. The find expression will only match regular files
-		# (not directories or symlinks), and it will not match hidden files (which
-		# names begin with a "."). If any profile only applies to such files or
-		# directories, they will not be picked up. Conversely, any file with a name
-		# ending in ".<something>" may produce a false positive.
-
-		find "${files_dir}" -type f -name "*.*" -a -not -name "*.bak" | \
-				sed 's/^.*\.//' | sort | uniq
+		local file name
+		for file in "${dir}"/scripts/*([:alpha:])*.start; do
+			name="${file##*/}"
+			echo "${name%.start}"
+		done
 	fi
-
+	exit
 }
 
-# Look for files with extension .<profile> in the appropriate profile directory,
-# and replace files appropriately.
-# Arguments: the name of the profile; the prefix - for global profiles, this 
-#  should be "", for user profiles, this should be the home directory; the 
-#  profile type's 'files' directory; the log file to use.
-substitute_files () {
+# @DESCRIPTION: Swap files with extension .<profile> in the appropriate profile
+# directory, and replace files appropriately.
+# @ARGUMENTS: <profile> <prefix> 
+#   <prefix> should be "" for global profiles, or home directory for user
+function swap-files {
+	local profile="${1}" filesdir="${2}" log="${3}"
+	local src dest
+:	${dir="${dir%/}"}
 
-	local profile="${1}"
-  local prefix="${2}"
-  local files_dir="${3}"
-  local log="${4}"
- 
-	local src=""
-  local dest=""
-	local backup=""
-	local noprefix_dest=""
-	local p=""
-
-  # If profile-dir or prefix have a trailing /, things may get ugly, so strip.
-  prefix=${prefix%/}
-  profile_dir=${profile_dir%/}
-
-	for src in $(find "${files_dir}" -name "*.${profile}") ; do
-
-		# Find out where the file's going
-		dest="${src#${files_dir}}"
-  	dest="${dest%.${profile}}"
-		dest="${prefix}${dest}"
- 
-		# Get profile-specific file $src and copy to $dest
-			
-		# If file exists, we may want to back it up
-		if test -r "${dest}" ; then
-
-			# If the file we want to replace with our profile specific 
-			# file really belongs to another file, don't back up, to avoid
-			# overwriting backups if we change profiles twice
-				
-			backup=1
-			noprefix_dest="${dest#${prefix}}"
-			
-			for p in $(find "${files_dir}${noprefix_dest%/*}" -name "${dest##*/}.*")
-			do
-				diff "${dest}" "${p}" >/dev/null && backup=0 && break
-			done
-
-			if test "${backup}" == "1" ; then
-				cp -Rdp "${dest}" "${files_dir}${noprefix_dest}.bak" ||
-				  log_message "Warning: Copying ${dest} to ${files_dir}${noprefix_dest}.bak failed!" "${log}"
-			fi
-		fi		  
-		
-		( ln -sf "${src}" "${dest}" && 
-				chown -R $(stat -c "%U:%G" "${src}") "${dest}" )	||
-			 log_message "Warning: Restoring ${src} to ${dest} failed!" "${log}"
-
-  done
-}
-
-# Apply user profiles by examining ~/.hprofile/<profile type>.
-# Arguments: the profile type; the profile
-apply_user_profiles () {
-
-	local profile_type="${1}"
-	local profile="${2}"
-	
-	local username=""
-				
-	# Try all usernames in /etc/shadow for users with a valid login
-	for username in $(grep -v "^[^:]*:[\*\!]" ${shadowfile} | \
-				sed 's/\(.*\):.*:.*:.*:.*:.*:.*:.*:.*/\1/') ; do
-
-		if test -n "${username}" ; then
-
-			# Find their home directory
-			local home_dir=$(grep "${username}" "${passwdfile}" | \
-									sed 's/^.*:.*:.*:.*:.*:\(.*\):.*$/\1/')
-									
-			if test -n "${home_dir}" ; then
-
-				# Apply the profile
-				local user_profile_dir="${home_dir}/.hprofile/profiles/${profile_type}"
-				local user_files_dir="${user_profile_dir}/files"
-				local user_scripts_dir="${user_profile_dir}/scripts"
-
-				# Run the pre-start script
-
-				if test -x "${user_profile_dir}/pre-start" ; then
-					sudo -u "${username}" "${user_profile_dir}/pre-start" "${profile}" || 
-						continue
-				fi
-
-				# Substitute the files
-				if test -w "${user_files_dir}" ; then
-					substitute_files "${profile}" "${home_dir}" "${user_files_dir}" \
-											"${home_dir}/.hprofile/log"
-				fi
-
-				# Run the scripts/ directory script
-				if test -x "${user_scripts_dir}/${profile}.start" ; then
-					sudo -u "${username}" "${user_scripts_dir}/${profile}.start" || 
-						continue
-				fi
-
-				# Run the post-start script
-				if test -x "${user_profile_dir}/post-start" ; then
-					sudo -u "${username}" "${user_profile_dir}/post-start" "${profile}"
-				fi
+	for src in $(find "${filesdir}" -name "*.${profile}"); do
+		dest="${src#${filesdir}}"
+		dest="${dest%.${profile}}"
+		if test -e "${dest}" -a ! -h "${dest}"; then
+			if ! diff "${dest}" "${src}" >/dev/null; then
+				mv -f "${dest}"{,.bak} || log-message \
+					"Failed to back up ${dest} file" "${log}"
 			fi
 		fi
+		ln -fs "${src}" "${dest}" || log-message \
+			"Failed to restore ${src} to ${dest}" "${log}"
 	done
-
 }
 
-# Actually apply a profile
-# Arguments: the profile type; the profile to apply
-apply_profile () {
+# @DESCRIPTION: Apply profile
+# @ARGUMENTS: <type> <profile>
+function apply-profile {
+	local type="${1}" profile="${2}" logfile="${3}"
+	local dir="${PROFILE[dir]}/profiles/${1}"
+	local files="${dir}/files" scripts="${dir}/scripts"
 
-	local profile_type="${1}"
-	local profile="${2}"
-
-	if test -z "${profile_type}" -o -z "${profile}" ; then
-		echo "No profile type or no profile specified." >&2
-		return 1
+	stop-current-profile "${type}" "${profile}"
+	if [[ -s "${dir}/pre-start" ]]; then
+		run-script "${dir}/pre-start" "${profile}" ||
+			die "Failed to run ${dir}/pre-start"
 	fi
-
-	# Stop the current profile
-
-	stop_current_profile "${profile_type}" "${profile}"
-
-	# Do the global profile
-	local profile_dir="${cdir}/profiles/${profile_type}"
-	local files_dir="${profile_dir}/files"
-	local scripts_dir="${profile_dir}/scripts"
-
-	# If the pre-start script exists in the profile_dir, run it. If this returns
-	# an error code, abort the whole shebang
-	if test -x "${profile_dir}/pre-start" ; then
-		if ! "${profile_dir}/pre-start" "${profile}" ; then
-			echo "Pre-start script for ${profile_type} profile ${profile} failed." >&2
-			return 3
-		fi
+	if [[ -d "${files}" ]]; then
+		swap-files "${profile}" "${files}" "${logfile}" ||
+			die "Failed to swap ${files} files"
 	fi
-
-	if test -w "${files_dir}" ; then
-		substitute_files "${profile}" "" "${files_dir}" "${logfile}"
+	if [[ -s "${scripts}/${profile}.start" ]]; then
+		run-script "${scripts}/${profile}.start" ||
+			die "Failed to run ${scripts}/${profile}.start script"
 	fi
-
-	# Then do the user profiles
-	if test "${userprofiles}" = 1 ; then
-		apply_user_profiles "${profile_type}" "${profile}"
+	if [[ -s "${dir}/post-start" ]]; then
+		run-script "${dir}/post-start" "${profile}" ||
+			die "Failed to run ${dir}/post-start script"
 	fi
-
-	# Run the script in the scripts/ directory
-	if test -x "${scripts_dir}/${profile}.start" ; then
-		"${scripts_dir}/${profile}.start"
-	fi
-
-	# Run the post-start script
-	if test -x "${profile_dir}/post-start" ; then
-		"${profile_dir}/post-start" "${profile}"
-	fi
-
-
-	# Save the profile
-	save_current_profile "${profile_type}" "${profile}"
+	save-current-profile "${type}" "${profile}"
 }
 
-# Intialise, processing command line options
-init ${@}
+[[ "${1}" ]] || print-usage 2
 
-if test -z "${1}" ; then
-	print_help
-	exit 2
-fi
+declare -A PROFILE
+PROFILE=(
+	[dir]="${PKG[confdir]}"
+)
 
-# If no command line option stopped us, determine profile type and name and
-# apply the profile
+opt="$(getopt -n ${PKG[name]} -o hvtc:P:p:l:s:r:u: -l help,previous:,version \
+	-l profile:,type,current:,list:,stop:,revert,user: -- "$@" || print-usage)"
+eval set -- "$opt"
 
-profile_type=${1%.*}
-profile_name=${1/${profile_type}/}
-profile_name=${profile_name#.}
+while (( $# > 1 )); do
+	case "${1}" in
+		(-h|--help) print-usage 0;;
+		(-v|--version) print-version;;
+		(-t|--type)	print-profile-types;;
+		(-c|--current)
+			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
+			get-current-profile "${2}"
+			exit
+			;;
+		(-p|--profile)
+			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
+			get-profile "${2}"
+			exit
+			;;
+		(-P|--previous)
+			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
+			get-profile "${2}"
+			exit
+			;;
+		(-l|--list)
+			verify-profile-type "${2}" || die "Invalid profile type ${2}"
+			print-profiles "${2}"
+			;;
+		(-s|--stop)
+			verify-profile-type "${2}" || die "Invalid profile type ${2}"
 
-if test -z "${profile_type}" ; then
-	echo "Could not determine the type of profile to select" >&2
-	exit 2
-fi
+			stop_current_profile "${2}" && exit
+			log-message "Could not stop \"${2}\" profile - unable to determine current profile"
+			die "Unable to determine the current ${OPTARG} profile"
+			;;
+		(-r|--revert)
+			verify-profile-type "${2}" || error "Invalid profile type ${2}"
+			revert-profile "${2}"
+			exit ${?}
+			;;
+		(-u|--user) PROFILE[dir]="${HOME}/.${PKG[name]}";;
+		(--) shift;;
+		(*) print-usage 2;;
+	esac
+done
 
-if ! verify_profile_type "${profile_type}" ; then
-	echo "Invalid profile type: ${profile_type}"
-	exit 2
-fi
+PROFILE[name]=$(echo "${1}" | cut -d. -f2 -s)
+PROFILE[type]="${1%.*}"
 
-profile=$(get_profile "${profile_type}" "${profile_name}")
+[[ "${PROFILE[type]}" ]] ||
+	die "Empty/null profile type"
 
-if test -z "${profile}" ; then
-	echo "Could not find ${profile_type} profile ${profile_name}" >&2
-	exit 2
-fi
+verify-profile-type "${PROFILE[type]}" ||
+	die "Invalid profile type: ${PROFILE[type]}"
 
-apply_profile "${profile_type}" "${profile}"
-exit ${?}
+[[ "${PROFILE[name]}" ]] || PROFILE[name]=$(get-profile "${PROFILE[type]}")
+
+[[ "${PROFILE[name]}" ]] ||
+	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
+
+apply-profile "${PROFILE[type]}" "${PROFILE[name]}" "${PKG[logfile]}"
+
+unset HPROFILE PKG PROFILE
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#
