@@ -1,4 +1,0 @@
-#!/bin/bash
-
-speedfreq -p performance
-echo "15" > /proc/acpi/asus/brn
