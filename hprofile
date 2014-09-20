@@ -73,13 +73,15 @@ function version {
 	exit
 }
 
-# @DESCRIPTION: Verify validity of a profile type is valid, i.e. it has a
-# directory in /etc/hprofile/profiles.
-# @ARGUMENTS: the profile type
+# @DESCRIPTION: Verify validity of a profile type
+# @ARGUMENTS: <type>
 function verify-profile-type {
 	test "${#}" -eq 1 -a -n "${1}" || return
-	local dir="${PROFILE[dir]}/profiles/${1}"
-	test -e "${dir}"/ptest -o -f "${dir}"/profiles -o -f "${dir}"/default
+	test -n "${dir}" -a -d "${dir}" || local dir="${PROFILE[dir]}/profiles/${1}"
+
+	test -e "${dir}/ptest"   -o -f "${dir}/profiles" -o \
+		 -f "${dir}"/default -o -e "${dir}"/pre-start -o \
+		 -e "${dir}"/post-start
 }
 
 # @DESCRIPTION: Print the profile to be used. This will call hpdet if no profile
@@ -100,18 +102,8 @@ function get-profile {
 # @DESCRIPTION: Print the currently selected profile
 # @ARGUMENTS: <type>
 function get-current-profile {
-	[[ "${1}" ]] || return
 	local file="${PROFILE[dir]}/profiles/${1}/current"
 
-	[[ -s "${file}" ]] && echo $(< "${file}")
-}
-
-# @DESCRIPTION: Print the previous profile
-# @ARGUMENTS: <type>
-function get-previous-profile {
-	[[ "${1}" ]] || return
-	local file="${PROFILE[dir]}/profiles/${1}/previous"
-	
 	[[ -s "${file}" ]] && echo $(< "${file}")
 }
 
@@ -147,55 +139,41 @@ function run-script {
 
 # @DESCRIPTION: Stop the current profile of the given type
 # @ARGUMENTS: <type> <profile>
-function stop-current-profile {
-	local dir="${PROFILE[dir]}/profiles/${1}"
-	local profile=$(get-current-profile "${1}")
+function stop-profile {
+	for scr in pre-stop scripts/${profile}.stop post-stop; do
+		if [[ -s "${dir}/${scr}" ]]; then
+			run-script "${dir}/${scr}" "${profile}" ||
+				die "Failed to run ${type}/${scr} script"
+		fi
+	done
 
-	# Stop the *global* script and *profile* script if possible
-	if [[ -s "${dir}/scripts/${profile}.stop" ]]; then
-		run-script "${dir}/scripts/${profile}.stop" "${profile}" ||
-		error "failed to stop ${1}.${profile} profile"
-	fi
-	if [[ -s "${dir}"/post-stop ]]; then
-		run-script "${dir}"/post-stop "${profile}" ||
-		error "failed to stop ${1}"
-	fi
-
-	# Clean up current/previous profile files
-	echo              > "${PROFILE[dir]}/profiles/${1}/current"
-	echo "${profile}" > "${PROFILE[dir]}/profiles/${1}/previous"
-
-	return 0
-}
-
-# @DESCRIPTION: Save the current profile to 'current' in the profile directory.
-# @ARGUMENTS: <type> <profile>
-function save-current-profile {
-	echo "${2}" >"${PROFILE[dir]}/profiles/${1}/current"
+	echo              > "${PROFILE[dir]}/profiles/${type}/current"
+	echo "${profile}" > "${PROFILE[dir]}/profiles/${type}/previous"
 }
 
 # @DESCRIPTION: Revert to the previous profile of the given type
 # @ARGUMENTS: <type>
 function revert-profile {
-	local profile=$(get-previous-profile "${1}")
+	local file="${PROFILE[dir]}/profiles/${1}/previous"
+	[[ -s "${file}" ]] && local previous=$(< "${file}") || return
 
-	[[ "${profile}" ]] || return
-	apply-profile "${1}" "${profile}"
+	[[ "${previous}" ]] || return
+	start-profile "${1}" "${previous}"
 }
 
 # @DESCRIPTION: Print all known profile types
-function print-profile-types {
+function profile-type {
 	for dir in "${PROFILE[dir]}/profiles"/*([:alpha:])*; do
-		test -e "${dir}/ptest" -o -f "${dir}/profiles" -a -f "${dir}"/default &&
-			echo -n "${dir##*/} "
+		verify-profile-type "${dir}" && echo -n "${dir##*/} "
 	done
+
 	echo
 	exit
 }
 
 # @DESCRIPTION: Print all valid profiles of the given type
 # @ARGUMENTS: <type>
-function print-profiles {
+function profile-list {
 	local dir="${PROFILE[dir]}/profiles/${1}"
 
 	if [[ -s "${dir}/profiles" ]]; then
@@ -215,49 +193,43 @@ function print-profiles {
 # @ARGUMENTS: <profile> <prefix> 
 #   <prefix> should be "" for global profiles, or home directory for user
 function swap-files {
-	local profile="${1}" filesdir="${2}" logfile="${3}"
-	local src dest
-:	${dir="${dir%/}"}
+	local filesdir="${dir}/files" src dest
 
 	for src in $(find "${filesdir}" -name "*.${profile}"); do
 		dest="${src#${filesdir}}"
 		dest="${dest%.${profile}}"
 		if test -e "${dest}" -a ! -h "${dest}"; then
 			if ! diff "${dest}" "${src}" >/dev/null; then
-				mv -f "${dest}"{,.bak} || error \
-					"Failed to back up ${dest} file" "${logfile}"
+				mv -f "${dest}"{,.bak} || die "Failed to back up ${dest} file"
 			fi
 		fi
-		ln -fs "${src}" "${dest}" || error \
-			"Failed to restore ${src} to ${dest}" "${logfile}"
+		ln -fs "${src}" "${dest}" || die "Failed to restore ${src} to ${dest}"
 	done
 }
 
 # @DESCRIPTION: Apply profile
 # @ARGUMENTS: <type> <profile>
-function apply-profile {
-	local type="${1}" profile="${2}" logfile="${3}"
+function start-profile {
+	local type="${1}" profile="${2}"
 	local dir="${PROFILE[dir]}/profiles/${1}"
-	local files="${dir}/files" scripts="${dir}/scripts"
+:	${dir="${dir%/}"}
 
-	stop-current-profile "${type}" "${profile}"
-	if [[ -s "${dir}/pre-start" ]]; then
-		run-script "${dir}/pre-start" "${profile}" ||
-			die "Failed to run ${dir}/pre-start"
-	fi
+	# Stop profile
+	stop-profile
+
+	# Start profile
+	for scr in pre-start scripts/${profile}.start post-start; do
+		if [[ -s "${dir}/${scr}" ]]; then
+			run-script "${dir}/${scr}" "${profile}" ||
+				die "Failed to run ${type}/${scr} script"
+		fi
+	done
 	if [[ -d "${files}" ]]; then
-		swap-files "${profile}" "${files}" "${logfile}" ||
-			die "Failed to swap ${files} files"
+		swap-files || die "Failed to swap ${type}.${profile} files"
 	fi
-	if [[ -s "${scripts}/${profile}.start" ]]; then
-		run-script "${scripts}/${profile}.start" "${profile}" ||
-			die "Failed to run ${profile}.start script"
-	fi
-	if [[ -s "${dir}/post-start" ]]; then
-		run-script "${dir}/post-start" "${profile}" ||
-			die "Failed to run ${dir}/post-start script"
-	fi
-	save-current-profile "${type}" "${profile}"
+
+	# Save profile
+	echo "${profile}" >"${PROFILE[dir]}/profiles/${type}/current"
 }
 
 [[ "${1}" ]] || usage 2
@@ -275,7 +247,7 @@ while (( $# > 1 )); do
 	case "${1}" in
 		(-h|--help) usage 0;;
 		(-v|--version) version;;
-		(-t|--type)	print-profile-types;;
+		(-t|--type)	profile-type;;
 		(-c|--current)
 			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
 			get-current-profile "${2}"
@@ -293,7 +265,7 @@ while (( $# > 1 )); do
 			;;
 		(-l|--list)
 			verify-profile-type "${2}" || die "Invalid profile type ${2}"
-			print-profiles "${2}"
+			profile-list "${2}"
 			;;
 		(-s|--stop)
 			verify-profile-type "${2}" || die "Invalid profile type ${2}"
@@ -327,7 +299,7 @@ verify-profile-type "${PROFILE[type]}" ||
 [[ "${PROFILE[name]}" ]] ||
 	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
 
-apply-profile "${PROFILE[type]}" "${PROFILE[name]}" "${HPROFILE[logfile]}"
+start-profile "${PROFILE[type]}" "${PROFILE[name]}"
 
 unset HPROFILE PKG PROFILE
 
