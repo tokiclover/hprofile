@@ -121,13 +121,13 @@ function run-script {
 	test "${#}" -ge 1 -a -s "${1}" || return
 	local file="${1}" head="${1%/*}" tail="${1##*/}"
 
-	if [[ -s "${head}/start" ]]; then
+	if [[ -s "${dir}/start" ]]; then
 		function start {
-			source "${head}/start"
+			source "${dir}/start"
 		}
-	elif [[ -s "${head}/stop" ]]; then
+	elif [[ -s "${dir}/stop" ]]; then
 		function stop {
-			source "${head}/stop"
+			source "${dir}/stop"
 		}
 	fi
 
