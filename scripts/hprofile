@@ -19,14 +19,16 @@ PKG=(
 )
 
 if [[ -f "${PKG[confdir]}/${PKG[name]}.conf" ]]; then
+	declare -A HPROFILE
 	source "${PKG[confdir]}/${PKG[name]}.conf"
-	for key in "${!HPROFILE[@]}"; do
-		PKG[$key]=${HPROFILE[$key]}
-	done
 fi
 
 function print-error {
-	echo -e "\e[1;31m* \e[0m${0##*/}: $@" >&2
+	if [[ "${HPROFILE[logfile]}" ]]; then
+		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
+	else
+		echo -e "\e[1;31m* \e[0m${PKG[name]}: ${@}" >&2
+	fi
 }
 
 function die {
@@ -36,7 +38,11 @@ function die {
 }
 
 function print-info {
-	echo -e "\e[1;32m \e[0m${0##*/}: $@"
+	if [[ "${HPROFILE[logfile]}" ]]; then
+		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
+	else
+		echo -e "\e[1;32m \e[0m${PKG[name]}: ${@}"
+	fi
 }
 
 function print-usage {
@@ -65,15 +71,6 @@ exit ${1:-?}
 function print-version {
 	echo "${PKG[name]}-${PKG[version]}"
 	exit
-}
-
-# @DESCRIPTION: Log a message, with the current date/time to the log file
-# @ARGUMENTS: <message to log> [<log-file>]
-function log-message {
-	[[ "${1}" ]] || return
-
-	test -n "${2}" -a -e "${2}" && echo "${PKG[name]}: ${1}" >> "${2}" ||
-		logger -p user.notice "${PKG[name]}: $@"
 }
 
 # @DESCRIPTION: Verify validity of a profile type is valid, i.e. it has a
@@ -222,7 +219,7 @@ function print-profiles {
 # @ARGUMENTS: <profile> <prefix> 
 #   <prefix> should be "" for global profiles, or home directory for user
 function swap-files {
-	local profile="${1}" filesdir="${2}" log="${3}"
+	local profile="${1}" filesdir="${2}" logfile="${3}"
 	local src dest
 :	${dir="${dir%/}"}
 
@@ -231,12 +228,12 @@ function swap-files {
 		dest="${dest%.${profile}}"
 		if test -e "${dest}" -a ! -h "${dest}"; then
 			if ! diff "${dest}" "${src}" >/dev/null; then
-				mv -f "${dest}"{,.bak} || log-message \
-					"Failed to back up ${dest} file" "${log}"
+				mv -f "${dest}"{,.bak} || error \
+					"Failed to back up ${dest} file" "${logfile}"
 			fi
 		fi
-		ln -fs "${src}" "${dest}" || log-message \
-			"Failed to restore ${src} to ${dest}" "${log}"
+		ln -fs "${src}" "${dest}" || error \
+			"Failed to restore ${src} to ${dest}" "${logfile}"
 	done
 }
 
@@ -306,7 +303,7 @@ while (( $# > 1 )); do
 			verify-profile-type "${2}" || die "Invalid profile type ${2}"
 
 			stop_current_profile "${2}" && exit
-			log-message "Could not stop \"${2}\" profile - unable to determine current profile"
+			error "Could not stop \"${2}\" profile - unable to determine current profile"
 			die "Unable to determine the current ${OPTARG} profile"
 			;;
 		(-r|--revert)
@@ -334,7 +331,7 @@ verify-profile-type "${PROFILE[type]}" ||
 [[ "${PROFILE[name]}" ]] ||
 	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
 
-apply-profile "${PROFILE[type]}" "${PROFILE[name]}" "${PKG[logfile]}"
+apply-profile "${PROFILE[type]}" "${PROFILE[name]}" "${HPROFILE[logfile]}"
 
 unset HPROFILE PKG PROFILE
 
