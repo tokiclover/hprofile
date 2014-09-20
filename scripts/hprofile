@@ -119,28 +119,24 @@ function get-previous-profile {
 # @ARGUMENTS: <script> <args>
 function run-script {
 	test "${#}" -ge 1 -a -s "${1}" || return
-	local head="${1%/*}" tail="${1##*/}" file="${1}"
+	local file="${1}" head="${1%/*}" tail="${1##*/}"
 
-	if test "${tail%.start}" != "${tail}" -a -s "${head}/start"; then
+	if [[ -s "${head}/start" ]]; then
 		function start {
 			source "${head}/start"
 		}
-	elif test "${tail%.stop}" != "${tail}" -a -s "${head}/stop"; then
+	elif [[ -s "${head}/stop" ]]; then
 		function stop {
 			source "${head}/stop"
 		}
 	fi
 
-	if test "${tail%.start}" != "${tail}" -o "${tail%.stop}" != "${tail}"; then
-		local file name
-		for file in "${head}"/*([:alnum:])*.bash; do
-			[[ -s "${file}" ]] || continue
-			name=${file##*/}
-			function ${name%.bash} {
-				source "${file}"
-			}
-		done
-	fi
+	local src name bash=$(type -p bash)
+	for src in "${dir}"/*([:alnum:])*.bash; do
+		[[ -s "${src}" ]] || continue
+		name=${src##*/}
+		eval "${name//\./_}"="${src}"
+	done
 
 	function script {
 		source "${file}"
