@@ -1,0 +1,59 @@
+#
+# $Header: profiles/power/start Exp $
+#
+
+local cpu pci usb hda nmi vmw aspm scsi
+declare -A opt
+opt=(
+	[cpu]=${1:-powersave}
+	[pci]=${2:-auto}
+	[usb]=${3:-auto}
+	[hda]=${5:-1}
+	[nmi]=${6:-0}
+	[vmw]=${7:-1000}
+	[aspm]=${8:-default}
+	[scsi]=${4:-min_power}
+)
+
+for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+	echo ${opt[cpu]} >$cpu/cpufreq/scaling_governor
+done
+
+[ -e /sys/module/pcie_aspm/parameters/policy ] &&
+	echo ${opt[aspm]} >/sys/module/pcie_aspm/parameters/policy >/dev/null 2>&1
+for scsi in /sys/class/scsi_host/host[0-9]*; do
+	[ -e $scsi/link_power_management_policy ] || continue
+	case "$(< $scsi/proc_name)" in
+		(ahci|usb-storage)
+			echo ${opt[scsi]} >$scsi/link_power_management_policy;;
+		(*) ;;
+	esac
+done
+
+# set usb host to auto powersave
+for usb in /sys/bus/usb/devices/{usb[0-9],[0-9]-[0-9]}; do
+	echo ${opt[usb]} >$usb/power/control
+done
+
+# pci power control
+for pci in /sys/bus/pci/devices/0000:0*; do 
+	echo ${opt[pci]} >$pci/power/control
+done
+
+# snd-hda-intel powersave
+[ -e /sys/module/snd_hda_intel/parameters/power_save ] &&
+	echo ${opt[hda]} >/sys/module/snd_hda_intel/parameters/power_save
+
+# turn off NMI watchdog
+[ -e /proc/sys/kernel/nmi_watchdog ] &&
+	echo ${opt[nmi]} >/proc/sys/kernel/nmi_watchdog
+
+# VM write back timeout
+[ -e /proc/sys/vm/dirty_writeback_centisecs ] &&
+	echo ${opt[vmw]} >/proc/sys/vm/dirty_writeback_centisecs
+
+unset opt
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#
