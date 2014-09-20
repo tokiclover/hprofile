@@ -1,0 +1,23 @@
+#
+#
+#
+
+info "Stoping vga.${1} profile"
+
+# Uncomment the following line and last one if one need
+# to force remove nouveau/kms driver for e.g. nvidia
+if [ ! -e sys/kernel/debug/vgaswitcheroo/switch ]; then
+	echo 0 >/sys/class/vtconsole/vtcon1/bind
+	if ! rmmod nouveau; then
+		die "Failed to remove nouveau kernel module"
+	else
+		/etc/init.d/consolefont restart
+		rmmod ttm
+		rmmod drm_kms_helper
+		rmmod dri
+	fi
+fi
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#

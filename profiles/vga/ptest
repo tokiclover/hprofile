@@ -1,0 +1,20 @@
+#
+#
+#
+
+local switch=/sys/kernel/debug/vgaswitcheroo/switch
+local drv
+
+if [  ! -e $switch ]; then
+	grep -q i915	/proc/modules || modprobe i915	  >/dev/null 2>&1
+	grep -q radeon  /proc/modules || modprobe radeon  >/dev/null 2>&1
+	grep -q nouveau /proc/modules || modprobe nouveau >/dev/null 2>&1
+fi
+
+drv="$(lspci -k | sed -nre 's/Kernel driver in use: ((i915|fglrx|radeon|nouveau|nvidia))/\1/p')"
+
+echo "$drv"
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#
