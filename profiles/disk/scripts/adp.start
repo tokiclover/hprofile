@@ -1,0 +1,14 @@
+#
+#
+#
+
+${bash:-bash} -a "$usb_bash"
+
+ata=$(${bash:-bash} -a "$ata_bash")
+[[ "$ata" ]] && hdparm -q -S120 -B230 -M254 $ata
+
+unset ata
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#
