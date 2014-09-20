@@ -2,12 +2,19 @@
 #
 #
 
-${bash:-bash} -a "$usb_bash"
+function _usb {
+	source "$usb_bash"
+}
+_usb
 
-ata=$(${bash:-bash} -a "$ata_bash")
+function _ata {
+	source "$ata_bash"
+}
+ata=$(_ata)
+
 [[ "$ata" ]] && hdparm -q -S120 -B230 -M254 $ata
 
-unset ata
+unset _ata _usb ata
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
