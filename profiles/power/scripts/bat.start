@@ -3,7 +3,7 @@
 #
 
 start "powersave" "auto" "auto" "min_power" "1" "0" "1500" "powersave"
-apply-profile "disk" "bat"
+start-profile "disk" "bat"
 
 if [ -n "$DISPLAY" ]; then
     xbacklight -set 30

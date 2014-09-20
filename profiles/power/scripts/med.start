@@ -3,7 +3,7 @@
 #
 
 start "performance" "on" "on" "min_power" "0" "1" "500" "performance"
-apply-profile "disk" "adp"
+start-profile "disk" "adp"
 
 if [ -n "$DISPLAY" ]; then
     xbacklight -set 30

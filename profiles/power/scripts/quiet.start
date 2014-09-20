@@ -3,7 +3,7 @@
 #
 
 start "powersave" "auto" "auto" "min_power" "1" "0" "2500" "powersave"
-apply-profile "disk" "quiet"
+start-profile "disk" "quiet"
 
 if [ -n "$DISPLAY" ]; then
     xbacklight -set 30

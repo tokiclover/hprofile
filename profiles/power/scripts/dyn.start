@@ -3,7 +3,7 @@
 #
 
 start "performance" "on" "on" "mix_power" "0" "1" "500" "performance"
-apply-profile "disk" "dyn"
+start-profile "disk" "dyn"
 
 if [ -n "$DISPLAY" ]; then
     xbacklight -set 30
