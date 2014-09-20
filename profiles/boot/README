@@ -1,3 +1,0 @@
-This is a sample 'boot' profile. In fact, it's similar to what I use on my
-system. The 'ptest' script here uses vmware's builtin checkvm tool to find
-out if the system is in dualboot or vmware mode.
