@@ -1,12 +1,24 @@
-# hprofile change log
+3.0:
 
-*hprofile-2.0_beta2 (25 Dec 2003)
+* cleaned the mess to have a KISS script:
+    1. no need to have multiple sub-shell to be able to move a few files and
+	   run a few commands;
+	2. speed/effiency wise, the previous version was a disaster, hopefully
+	   this script was used for simple things;
+	3. who need hundreds of lines to move a few files and exec a few cmds?!
+* changed *API*:
+    1. no +x executable bit needed anymore as everthing can be runned in a
+	   single shell, so source-ing is prefered for efficiency/speed;
+	2. as exececuted scripts are sourced, scripts have access to internal
+	   helpers to use;
+	3. <profile-dir>/{star,stop} are common scripts for profile scripts if
+	   present, so those can be used as a common start/stop script;
+	4. <profile-dir>/script_name.bash are recognized and script_name_bash
+	   hold the path of the script, so those script can be used/sourced in
+	   a nice and simple way (see disk profile);
+	5. user profile are now properly handled in the same maner as system
+	   profiles, there is a -u|--user=$USER to specify the specific user
+	   so runtime profile is set to $HOME/.hprofile.
+* numerous fixes/clean ups...
 
-	25 Dec 2003; Martin Aspeli <optilude@gmx.net>:
-	Fixed spurious log message when starting profiles that had already been
-	stopped.
-
-*hprofile-2.0_beta1 (23 Dec 2003)
-
-  23 Dec 2003; Martin Aspeli <optilude@gmx.net>:
-	Initial public release, version 2.0 beta 1.
+2.0_beta2: 25 Dec 2003
