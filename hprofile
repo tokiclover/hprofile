@@ -23,7 +23,7 @@ if [[ -f "${PKG[confdir]}/${PKG[name]}.conf" ]]; then
 	source "${PKG[confdir]}/${PKG[name]}.conf"
 fi
 
-function print-error {
+function error {
 	if [[ "${HPROFILE[logfile]}" ]]; then
 		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
 	else
@@ -33,11 +33,11 @@ function print-error {
 
 function die {
 	local ret=$?
-	print-error "$@"
+	error "$@"
 	return $ret
 }
 
-function print-info {
+function info {
 	if [[ "${HPROFILE[logfile]}" ]]; then
 		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
 	else
@@ -45,7 +45,7 @@ function print-info {
 	fi
 }
 
-function print-usage {
+function usage {
 	cat <<-EOH
   ${PKG[name]}-${PKG[version]}
   usage: ${PKG[name]} [options] <type>|<type>.<profile>
@@ -68,7 +68,7 @@ EOH
 exit ${1:-?}
 }
 
-function print-version {
+function version {
 	echo "${PKG[name]}-${PKG[version]}"
 	exit
 }
@@ -154,11 +154,11 @@ function stop-current-profile {
 	# Stop the *global* script and *profile* script if possible
 	if [[ -s "${dir}/scripts/${profile}.stop" ]]; then
 		run-script "${dir}/scripts/${profile}.stop" "${profile}" ||
-		print-error "failed to stop ${1}.${profile} profile"
+		error "failed to stop ${1}.${profile} profile"
 	fi
 	if [[ -s "${dir}"/post-stop ]]; then
 		run-script "${dir}"/post-stop "${profile}" ||
-		print-error "failed to stop ${1}"
+		error "failed to stop ${1}"
 	fi
 
 	# Clean up current/previous profile files
@@ -250,8 +250,8 @@ function apply-profile {
 			die "Failed to swap ${files} files"
 	fi
 	if [[ -s "${scripts}/${profile}.start" ]]; then
-		run-script "${scripts}/${profile}.start" ||
-			die "Failed to run ${scripts}/${profile}.start script"
+		run-script "${scripts}/${profile}.start" "${profile}" ||
+			die "Failed to run ${profile}.start script"
 	fi
 	if [[ -s "${dir}/post-start" ]]; then
 		run-script "${dir}/post-start" "${profile}" ||
@@ -260,7 +260,7 @@ function apply-profile {
 	save-current-profile "${type}" "${profile}"
 }
 
-[[ "${1}" ]] || print-usage 2
+[[ "${1}" ]] || usage 2
 
 declare -A PROFILE
 PROFILE=(
@@ -268,13 +268,13 @@ PROFILE=(
 )
 
 opt="$(getopt -n ${PKG[name]} -o hvtc:P:p:l:s:r:u: -l help,previous:,version \
-	-l profile:,type,current:,list:,stop:,revert,user: -- "$@" || print-usage)"
+	-l profile:,type,current:,list:,stop:,revert,user: -- "$@" || usage)"
 eval set -- "$opt"
 
 while (( $# > 1 )); do
 	case "${1}" in
-		(-h|--help) print-usage 0;;
-		(-v|--version) print-version;;
+		(-h|--help) usage 0;;
+		(-v|--version) version;;
 		(-t|--type)	print-profile-types;;
 		(-c|--current)
 			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
@@ -309,7 +309,7 @@ while (( $# > 1 )); do
 			;;
 		(-u|--user) PROFILE[dir]="${HOME}/.${PKG[name]}";;
 		(--) shift;;
-		(*) print-usage 2;;
+		(*) usage 2;;
 	esac
 done
 
