@@ -1,4 +1,0 @@
-This directory contains the contents of my /etc/acpi directory, which is the
-configuration directory for acpid on my Gentoo Linux system. The rules and
-actions set here allow the power profile to be switched automatically using
-a 'power' hprofile (see the example profiles). 
