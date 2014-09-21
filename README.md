@@ -28,11 +28,11 @@ when profiles are changed.
 
 Best of all, hprofile is deceptively simple to use. Each type of profile has a
 directory where you define which files are to be switched around simply by naming
-them with a suffix of ".<profile-name>" in a directory hierarchy which mirrors
+them with a suffix of ".profile-name" in a directory hierarchy which mirrors
 the rest of the file system. Scripts to be run when profiles are applied or
 "stopped" are kept in a separate directory, and all you need to do to make sure
-the script is run at the appropriate time is to name it "<profile-name>.start"
-or "<profile-name>.stop". The tarball comes with a few pratical examples and a
+the script is run at the appropriate time is to name it "profile-name.start"
+or "profile-name.stop". The tarball comes with a few pratical examples and a
 README file to get going.
 
 ### README
