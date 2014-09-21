@@ -1,7 +1,0 @@
-#!/bin/bash
-
-# This script will be called with an argument of the profile being stopped when
-# hprofile -s is called, or when a new profile is applied, replacing the 
-# existing profile.
-
-echo "Stopping profile ${1}"

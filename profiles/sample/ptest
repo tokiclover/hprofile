@@ -1,5 +1,0 @@
-#!/bin/bash
-
-# This script should echo the name of the profile that should be used (only).
-
-echo "first_profile"
