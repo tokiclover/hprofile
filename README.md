@@ -13,17 +13,23 @@ Examples could be:
      This is handy for a complex setting because modern network manager are full
 	 of features for that.
 
-  3. Manage multiple power profiles, automatically setting your CPU power profile,
+  3. Manage multiple power profiles, automatically setting CPU power profile,
      adjusting display brightness and turning off certain sub-systems depending
-	 on hardware of software state.
+	 on hardware or software state.
 
 hprofile make it easy to define *profiles* which is just a directory whith shell
 scripts and a mirror of files to be swapped--sym-linked to be precise.
 
-Take a look at profiles/{disk,power,rfkill,vga} for practical examples. vga is a
-profile which swap XOrg configuration file depending on the kernel module in use.
-power is a profile which manage power profile for different sub-systems: cpu, usb,
-pci, pci aspm, nmi watchdog, vm write back time out and intel hda sound card.
+Take a look at profiles/{disk,power,rfkill,vga} for practical examples.
+
+## vga
+
+a profile which swap XOrg configuration file depending on the kernel module in use.
+
+## power
+
+a profile which manage power profile for different sub-systems: cpu, usb, pci,
+pci aspm, nmi watchdog, vm write back time out and intel hda sound card.
 
 ### README
 
