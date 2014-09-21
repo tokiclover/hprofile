@@ -1,5 +1,7 @@
 ### What is it?
 
+This a fork of the original [hprofile][1].
+
 hprofile is a bash shell script that can help you manage various profiles.
 
 Examples could be:
@@ -39,8 +41,18 @@ README file to get going.
 
 See the REAME file
 
+### Installation
+
+You must and should already have make, so just run:
+
+    make DESTDIR=/ prefix=/usr/local install
+
+to install everything in the usual/standard GNU/Linux File System Hierchy.
+
 ### License
 
 GNU General Plublic License version 2
 as pugblished by the Free Software Fondation, Inc.
+
+[1]: http://hprofile.sourceforge.net
 
