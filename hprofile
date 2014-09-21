@@ -75,13 +75,13 @@ function version {
 
 # @DESCRIPTION: Verify validity of a profile type
 # @ARGUMENTS: <type>
-function verify-profile-type {
-	test "${#}" -eq 1 -a -n "${1}" || return
+function verify-profile {
+	test "${#}" -eq 1 -a -n "${1}" ||  die "Invalid profile type ${1}"
 	test -n "${dir}" -a -d "${dir}" || local dir="${PROFILE[dir]}/profiles/${1}"
 
 	test -e "${dir}/ptest"   -o -f "${dir}/profiles" -o \
 		 -f "${dir}"/default -o -e "${dir}"/pre-start -o \
-		 -e "${dir}"/post-start
+		 -e "${dir}"/post-start || die "Invalid profile type ${2}"
 }
 
 # @DESCRIPTION: Print the profile to be used. This will call hpdet if no profile
@@ -90,6 +90,7 @@ function verify-profile-type {
 function get-profile {
 	local dir="${PROFILE[dir]}/profiles/${1}" name="${2}"
 
+	test -z "${name}" -a -s "${dir}/current" && name=$(< "${dir}/current")
 	test -z "${name}" -a -s "${dir}/ptest"   && name=$(run-script "${dir}/ptest")
 	test -z "${name}" -a -s "${dir}/default" && name=$(< "${dir}/default")
 
@@ -101,9 +102,8 @@ function get-profile {
 
 # @DESCRIPTION: Print the currently selected profile
 # @ARGUMENTS: <type>
-function get-current-profile {
+function current-profile {
 	local file="${PROFILE[dir]}/profiles/${1}/current"
-
 	[[ -s "${file}" ]] && echo $(< "${file}")
 }
 
@@ -112,16 +112,6 @@ function get-current-profile {
 function run-script {
 	test "${#}" -ge 1 -a -s "${1}" || return
 	local file="${1}" head="${1%/*}" tail="${1##*/}"
-
-	if [[ -s "${dir}/start" ]]; then
-		function start {
-			source "${dir}/start"
-		}
-	elif [[ -s "${dir}/stop" ]]; then
-		function stop {
-			source "${dir}/stop"
-		}
-	fi
 
 	local src name bash=$(type -p bash)
 	for src in "${dir}"/*([:alnum:])*.bash; do
@@ -138,15 +128,22 @@ function run-script {
 }
 
 # @DESCRIPTION: Stop the current profile of the given type
-# @ARGUMENTS: <type> <profile>
+# @ARGUMENTS: <inherited>|<type> <profile>
 function stop-profile {
+	[[ -n "${1}" ]] && local type="${1}" dir="${PROFILE[dir]}/profiles/${1}"
+	[[ -n "${2}" ]] && local profile="${2}"
+
+	if [[ -s "${dir}/stop" ]]; then
+		function stop {
+			source "${dir}/stop"
+		}
+	fi
 	for scr in pre-stop scripts/${profile}.stop post-stop; do
 		if [[ -s "${dir}/${scr}" ]]; then
 			run-script "${dir}/${scr}" "${profile}" ||
 				die "Failed to run ${type}/${scr} script"
 		fi
 	done
-
 	echo              > "${PROFILE[dir]}/profiles/${type}/current"
 	echo "${profile}" > "${PROFILE[dir]}/profiles/${type}/previous"
 }
@@ -156,17 +153,14 @@ function stop-profile {
 function revert-profile {
 	local file="${PROFILE[dir]}/profiles/${1}/previous"
 	[[ -s "${file}" ]] && local previous=$(< "${file}") || return
-
-	[[ "${previous}" ]] || return
-	start-profile "${1}" "${previous}"
+	[[ "${previous}" ]] && start-profile "${1}" "${previous}"
 }
 
 # @DESCRIPTION: Print all known profile types
 function profile-type {
 	for dir in "${PROFILE[dir]}/profiles"/*([:alpha:])*; do
-		verify-profile-type "${dir}" && echo -n "${dir##*/} "
+		verify-profile "${dir}" && echo -n "${dir##*/} "
 	done
-
 	echo
 	exit
 }
@@ -189,9 +183,8 @@ function profile-list {
 }
 
 # @DESCRIPTION: Swap files with extension .<profile> in the appropriate profile
-# directory, and replace files appropriately.
-# @ARGUMENTS: <profile> <prefix> 
-#   <prefix> should be "" for global profiles, or home directory for user
+# directory, and sym-link files appropriately.
+# @ARGUMENTS: <inherited>
 function swap-files {
 	local filesdir="${dir}/files" src dest
 
@@ -216,18 +209,22 @@ function start-profile {
 
 	# Stop profile
 	stop-profile
-
 	# Start profile
+	if [[ -s "${dir}/start" ]]; then
+		function start {
+			source "${dir}/start"
+		}
+	fi
 	for scr in pre-start scripts/${profile}.start post-start; do
 		if [[ -s "${dir}/${scr}" ]]; then
 			run-script "${dir}/${scr}" "${profile}" ||
 				die "Failed to run ${type}/${scr} script"
 		fi
 	done
+	# Sym-link files if available
 	if [[ -d "${files}" ]]; then
 		swap-files || die "Failed to swap ${type}.${profile} files"
 	fi
-
 	# Save profile
 	echo "${profile}" >"${PROFILE[dir]}/profiles/${type}/current"
 }
@@ -249,33 +246,30 @@ while (( $# > 1 )); do
 		(-v|--version) version;;
 		(-t|--type)	profile-type;;
 		(-c|--current)
-			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
-			get-current-profile "${2}"
+			verify-profile "${2}"
+			current-profile "${2}"
 			exit
 			;;
 		(-p|--profile)
-			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
+			verify-profile "${2}"
 			get-profile "${2}"
 			exit
 			;;
 		(-P|--previous)
-			verify-profile-type "${2}" || die "Invalid profile type \"${2}\""
+			verify-profile "${2}"
 			get-profile "${2}"
 			exit
 			;;
 		(-l|--list)
-			verify-profile-type "${2}" || die "Invalid profile type ${2}"
+			verify-profile "${2}"
 			profile-list "${2}"
 			;;
 		(-s|--stop)
-			verify-profile-type "${2}" || die "Invalid profile type ${2}"
-
-			stop_current_profile "${2}" && exit
-			error "Could not stop \"${2}\" profile - unable to determine current profile"
-			die "Unable to determine the current ${OPTARG} profile"
+			verify-profile "${2}"
+			stop-profile "${2}" && exit || die "Could not stop ${2} profile"
 			;;
 		(-r|--revert)
-			verify-profile-type "${2}" || error "Invalid profile type ${2}"
+			verify-profile "${2}"
 			revert-profile "${2}"
 			exit ${?}
 			;;
@@ -288,14 +282,10 @@ done
 PROFILE[name]=$(echo "${1}" | cut -d. -f2 -s)
 PROFILE[type]="${1%.*}"
 
-[[ "${PROFILE[type]}" ]] ||
-	die "Empty/null profile type"
-
-verify-profile-type "${PROFILE[type]}" ||
-	die "Invalid profile type: ${PROFILE[type]}"
+[[ "${PROFILE[type]}" ]] || die "Empty/null profile type"
+verify-profile "${PROFILE[type]}"
 
 [[ "${PROFILE[name]}" ]] || PROFILE[name]=$(get-profile "${PROFILE[type]}")
-
 [[ "${PROFILE[name]}" ]] ||
 	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
 
