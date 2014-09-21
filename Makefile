@@ -10,7 +10,7 @@ datadir	    = ${DESTDIR}${prefix}/share/$(PACKAGE)
 docdir      = ${DESTDIR}${prefix}/share/doc/$(PACKAGE)-${VERSION}
 
 DOCS        = AUTHORS COPYING README ChangeLog
-PROFILES    = disk power rfkill sample vga
+PROFILES    = disk power rfkill vga
 
 all:
 
