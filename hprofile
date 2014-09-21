@@ -90,7 +90,6 @@ function verify-profile {
 function get-profile {
 	local dir="${PROFILE[dir]}/profiles/${1}" name="${2}"
 
-	test -z "${name}" -a -s "${dir}/current" && name=$(< "${dir}/current")
 	test -z "${name}" -a -s "${dir}/ptest"   && name=$(run-script "${dir}/ptest")
 	test -z "${name}" -a -s "${dir}/default" && name=$(< "${dir}/default")
 
