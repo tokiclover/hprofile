@@ -11,6 +11,7 @@ docdir      = ${DESTDIR}${prefix}/share/doc/$(PACKAGE)-${VERSION}
 
 DOCS        = AUTHORS COPYING README ChangeLog
 PROFILES    = disk power rfkill vga
+ACPI        = actions/power events/power
 
 all:
 
@@ -27,6 +28,8 @@ install:
 		find profiles/$${profile} -type f -exec \
 		install -D -pm 644 '{}' $(sys_confdir)/$(PACKAGE)/'{}' \;; \
 	done
+	install -D -pm 755 acpi/actions/power $(sys_confdir)/acpi/actions/power
+	install -D -pm 755 acpi/events/power $(sys_confdir)/acpi/events/power
 
 install_doc:
 	install -pd $(docdir)
@@ -44,6 +47,8 @@ uninstall:
 	done
 	rmdir $(sys_confdir)/$(PACKAGE)/profiles
 	rmdir $(sys_confdir)/$(PACKAGE)
+	rm -f $(sys_confdir)/acpi/actions/power
+	rm -f $(sys_confdir)/acpi/events/power
 
 uninstall_doc:
 	$(shell) for doc in $(DOCS); do \
