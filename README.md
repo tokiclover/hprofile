@@ -31,7 +31,7 @@ a profile which swap XOrg configuration file depending on the kernel module in u
 a profile which manage power profile for different sub-systems: cpu, usb, pci,
 pci aspm, nmi watchdog, vm write back time out and intel hda sound card.
 
-## dik
+## disk
 
 a profile to manage hard disk power management using hdparm software.
 
