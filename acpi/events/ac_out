@@ -1,2 +1,0 @@
-event=ac_adapter.AC..00000080.00000000
-action=/etc/acpi/actions/ac_out
