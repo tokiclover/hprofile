@@ -6,36 +6,24 @@ hprofile is a bash shell script that can help you manage various profiles.
 
 Examples could be:
 
-  1. Manage multiple hardware configurations, for example if you boot your system
-     both within VMWare and in a normal dualboot configuration, or if you have a
-	 hardwares e.g. laptop/desktop with similar configuration files.
+  1. Manage multiple hardware configurations:
+     e.g. laptop/desktop with similar configuration files.
 
-  2. Manage multiple network connections, for example if you connect to different
-     networks at home and at work, or if you access multiple wireless networks.
+  2. Manage multiple network connections stack:
      This is handy for a complex setting because modern network manager are full
 	 of features for that.
 
-  3. Manage multiple power profiles, automatically scaling down your CPU speed,
-     reducing the brightness of your display and turning off certain resource
-	 hungry services when your laptop is running on batteries, and turn it all
-	 back on again as soon as you plug in the power.
+  3. Manage multiple power profiles, automatically setting your CPU power profile,
+     adjusting display brightness and turning off certain sub-systems depending
+	 on hardware of software state.
 
-The possibilities really are endless. hprofile makes it very easy to define a
-"profile" consisting of a group of configuration (or other) files, anywhere in
-the file system, switching them around with a single command. You can also run
-arbitrary scripts when profiles are applied or "stopped", to start or stop rc 
-services or configure your hardware. Individual users can even define their own
-files (in their home directory) to be switched and scripts to be run, to react
-when profiles are changed.
+hprofile make it easy to define *profiles* which is just a directory whith shell
+scripts and a mirror of files to be swapped--sym-linked to be precise.
 
-Best of all, hprofile is deceptively simple to use. Each type of profile has a
-directory where you define which files are to be switched around simply by naming
-them with a suffix of ".profile-name" in a directory hierarchy which mirrors
-the rest of the file system. Scripts to be run when profiles are applied or
-"stopped" are kept in a separate directory, and all you need to do to make sure
-the script is run at the appropriate time is to name it "profile-name.start"
-or "profile-name.stop". The tarball comes with a few pratical examples and a
-README file to get going.
+Take a look at profiles/{disk,power,rfkill,vga} for practical examples. vga is a
+profile which swap XOrg configuration file depending on the kernel module in use.
+power is a profile which manage power profile for different sub-systems: cpu, usb,
+pci, pci aspm, nmi watchdog, vm write back time out and intel hda sound card.
 
 ### README
 
