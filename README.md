@@ -31,6 +31,16 @@ a profile which swap XOrg configuration file depending on the kernel module in u
 a profile which manage power profile for different sub-systems: cpu, usb, pci,
 pci aspm, nmi watchdog, vm write back time out and intel hda sound card.
 
+## dik
+
+a profile to manage hard disk power management using hdparm software.
+
+## rfkill
+
+a simple profile to manage software RFKill capable devices, beware that, some
+hardware require a cold reboot (that is, shutdown and removing the battery for
+a few secondes) to function properly afterwards.
+
 ### README
 
 See the REAME file
