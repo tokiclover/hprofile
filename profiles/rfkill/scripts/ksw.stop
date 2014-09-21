@@ -2,8 +2,8 @@
 #
 #
 
-start-profile "rfkill" "bsw"
-start-profile "rfkill" "wsw"
+stop-profile "rfkill" "bsw"
+stop-profile "rfkill" "wsw"
 
 echo 0 >/sys/class/rfkill/rfkill0/state
 
