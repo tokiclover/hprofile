@@ -13,18 +13,13 @@ value=$4
 case $group in
 	(ac_adapter)
 		case $value in
-			*0) log "switching to power.bat power profile"
-				hprofile power.bat;;
-			*1) log "switching to power.adp power profile"
-				hprofile power.adp;;
+			*0) hprofile power.bat;;
+			*1) hprofile power.adp;;
 		esac
 		;;
 	(battery)
 		case $value in
-			*0) log "switching to power.adp power profile"
-				hprofile power.adp;;
-			*1) log "switching to power.adp power profile"
-				hprofile power.adp;;
+			*0|*1) hprofile power.adp;;
 		esac
 		;;
 esac
