@@ -50,16 +50,16 @@ function usage {
   ${PKG[name]}-${PKG[version]}
   usage: ${PKG[name]} [options] <type>|<type>.<profile>
 
-    -t, --type               Print all known profiles types and exit
-    -c, --current=<type>     Print the current <type> profile and exit
-    -p, --profile=<type>     Print the profile <type> that would be used
-    -l, --list=<type>        Print all available <type> profiles and exit
-    -s, --stop=<type>        Stop the current <type> profile and exit
+    -t, --type               Print all known profiles types
+    -c, --current=<type>     Print the current profile <type>
+    -p, --profile=<type>     Print the profile that would be used
+    -l, --list=<type>        Print all available <type> profiles
+    -s, --stop=<type>        Stop the current <type> profile
     -r, --revert=<type>      Revert to the previous <type> profile
     -u, --user=\$USER         Use a user profile instead of system wide
-    -h, --help               Print this help message and exit
-    -v, --version            Print version tring nd exit
-    -r, --revert=<type>[.<profile>] Revert <profile> profile type
+    -h, --help               Print this help message
+    -v, --version            Print pkgname-version_string
+    -r, --revert=<type>      Revert to the previous known <type> profile
 
   <type>                     Switch to the currently valid <type> profile
   <type>.<profile>           Switch to the given <type>.<profile> profile
