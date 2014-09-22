@@ -24,22 +24,47 @@ Take a look at profiles/{disk,power,rfkill,vga} for practical examples.
 
 ## vga
 
+# Description:
+
 a profile which swap XOrg configuration file depending on the kernel module in use.
 
+# Profiles:
+
+fglrx, intel, radeon, nouveau, nv, nvidia
+(that corresopn to xf86-video-profile, profile being a X.Org driver minus nvidia)
+
 ## power
+
+# Description:
 
 a profile which manage power profile for different sub-systems: cpu, usb, pci,
 pci aspm, nmi watchdog, vm write back time out and intel hda sound card.
 
+# Profiles:
+
+adp (AC adapter), bat (battery), dyn (dynamic, stand for performance), quiet
+
 ## disk
+
+# Description:
 
 a profile to manage hard disk power management using hdparm software.
 
+# Profiles:
+
+named as power profile names.
+
 ## rfkill
+
+# Description:
 
 a simple profile to manage software RFKill capable devices, beware that, some
 hardware require a cold reboot (that is, shutdown and removing the battery for
 a few secondes) to function properly afterwards.
+
+# Profiles:
+
+bsw (bluetooth switch), wsw (wireless/wifi switch), ksw (kill switch, bsw+wsw)
 
 ### README
 
