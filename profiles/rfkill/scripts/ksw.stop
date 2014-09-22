@@ -2,9 +2,8 @@
 #
 #
 
-stop-profile "rfkill" "bsw"
-stop-profile "rfkill" "wsw"
-
+echo 0 >/sys/class/rfkill/rfkill2/state
+echo 0 >/sys/class/rfkill/rfkill1/state
 echo 0 >/sys/class/rfkill/rfkill0/state
 
 #
