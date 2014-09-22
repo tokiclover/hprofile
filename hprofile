@@ -53,7 +53,6 @@ function usage {
     -t, --type               Print all known profiles types and exit
     -c, --current=<type>     Print the current <type> profile and exit
     -p, --profile=<type>     Print the profile <type> that would be used
-    -P, --previous=<type>    Print the previous <type> profile and exit
     -l, --list=<type>        Print all available <type> profiles and exit
     -s, --stop=<type>        Stop the current <type> profile and exit
     -r, --revert=<type>      Revert to the previous <type> profile
@@ -235,7 +234,7 @@ PROFILE=(
 	[dir]="${PKG[confdir]}"
 )
 
-opt="$(getopt -n ${PKG[name]} -o hvtc:P:p:l:s:r:u: -l help,previous:,version \
+opt="$(getopt -n ${PKG[name]} -o hvtc:p:l:s:r:u: -l help,version \
 	-l profile:,type,current:,list:,stop:,revert,user: -- "$@" || usage)"
 eval set -- "$opt"
 
@@ -250,11 +249,6 @@ while (( $# > 1 )); do
 			exit
 			;;
 		(-p|--profile)
-			verify-profile "${2}"
-			get-profile "${2}"
-			exit
-			;;
-		(-P|--previous)
 			verify-profile "${2}"
 			get-profile "${2}"
 			exit
