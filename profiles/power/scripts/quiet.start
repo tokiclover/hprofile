@@ -1,5 +1,5 @@
 #
-#
+# power/scripts/quiet.start
 #
 
 start "powersave" "auto" "auto" "min_power" "1" "0" "2500" "powersave"

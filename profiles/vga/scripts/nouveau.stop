@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/nouveau.stop
 #
 
 info "Stoping vga.${1} profile"

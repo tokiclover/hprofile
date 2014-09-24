@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/fglrx.stop
 #
 
 info "Stoping vga.${1} profile"

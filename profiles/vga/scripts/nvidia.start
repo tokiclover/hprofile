@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/nvidia.start
 #
 
 info "Starting vga.${1} profile"

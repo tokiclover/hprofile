@@ -1,5 +1,5 @@
 #
-#
+# power/scripts/med.start
 #
 
 start "performance" "on" "on" "min_power" "0" "1" "500" "performance"

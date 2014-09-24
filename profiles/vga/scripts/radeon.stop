@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/radeon.stop
 #
 
 info "Stopping fglrx vga profile."

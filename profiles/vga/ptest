@@ -1,5 +1,5 @@
 #
-#
+# vga/ptest
 #
 
 local switch=/sys/kernel/debug/vgaswitcheroo/switch

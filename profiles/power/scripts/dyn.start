@@ -1,5 +1,5 @@
 #
-#
+# power/scripts/dyn.start
 #
 
 start "performance" "on" "on" "mix_power" "0" "1" "500" "performance"

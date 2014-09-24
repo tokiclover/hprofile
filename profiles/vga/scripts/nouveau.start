@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/nouveau.start
 #
 
 info "Starting vga.${1} profile"

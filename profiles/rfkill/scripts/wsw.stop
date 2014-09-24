@@ -1,5 +1,5 @@
 #
-#
+# rfkill/scripts/wsw.stop
 #
 
 echo 0 >/sys/class/rfkill/rfkill1/state

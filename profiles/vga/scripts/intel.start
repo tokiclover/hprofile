@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/intel.start
 #
 
 info "Starting vga.${1} profile"

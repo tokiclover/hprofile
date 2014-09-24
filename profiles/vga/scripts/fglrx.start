@@ -1,5 +1,5 @@
 #
-#
+# vga/scripts/fglrx.start
 #
 
 info "Starting vga.${1} profile"

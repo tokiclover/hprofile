@@ -1,5 +1,5 @@
 #
-#
+# power/scripts/adp.start
 #
 
 start "powersave" "auto" "auto" "min_power" "1" "0" "1000" "default"

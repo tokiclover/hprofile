@@ -1,5 +1,5 @@
 #
-#
+# rfkill/scripts/bsw.start
 #
 
 echo 1 >/sys/class/rfkill/rfkill2/state

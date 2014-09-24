@@ -1,5 +1,5 @@
 #
-#
+# vga/post-stop
 #
 
 if [ -e /sys/kernel/debug/vgaswitcheroo/switch ]; then

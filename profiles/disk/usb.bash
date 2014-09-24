@@ -1,5 +1,5 @@
 #
-#
+# disk/usb.bash
 #
 
 shopt -qs extglob

@@ -1,5 +1,5 @@
 #
-#
+# vga/post-start
 #
 
 /etc/init.d/consolefont restart
