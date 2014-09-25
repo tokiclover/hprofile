@@ -54,6 +54,14 @@ done
 
 unset opt
 
+[[ "${HPROFILE[power]}" == "network" ]] || return
+local iface running
+
+for iface in $(ifconfig | sed -nre 's/(^[ew].*[0-9]{1}):.*/\1/p'); do
+	running="$(ifconfig $iface | sed -nre /$iface/'s/.*(RUNNING).*/\1/p')"
+	[[ "$running" ]] || ifconfig "$iface" down
+done
+
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #
