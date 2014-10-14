@@ -225,7 +225,7 @@ function start-profile {
 		fi
 	done
 	# Sym-link files if available
-	if [[ -d "${files}" ]]; then
+	if [[ -d "${dir}/files" ]]; then
 		swap-files || die "Failed to swap ${type}.${profile} files"
 	fi
 	# Save profile
