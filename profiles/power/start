@@ -15,7 +15,7 @@ opt=(
 	scsi ${4:-min_power}
 )
 
-for cpu /sys/devices/system/cpu/cpu[0-9]*(/N); do
+for cpu (/sys/devices/system/cpu/cpu[0-9]*(/N)); do
 	echo ${opt[cpu]} >$cpu/cpufreq/scaling_governor
 done
 
