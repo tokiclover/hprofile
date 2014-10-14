@@ -1,16 +1,17 @@
 #!/sbin/openrc-run
 # Copyright 1999-2014 Gentoo Foundation
 # Distributed under the terms of the 2-clause BSD or GPL-2 license
-# $Header: hprofile.initd,v 1.3 2014/09/20 13:05:23 -tclover Exp $
+# $Header: hprofile.initd,v 1.4 2014/10/10 13:05:23 -tclover Exp $
 
-config_file="/etc/conf.d/${RC_SVCNAME}"
 description="initialize hprofile boot profiles"
 
-depend() {
+depend()
+{
 	after modules
 }
 
-start() {
+start()
+{
 	for profile in $PROFILES; do
 	    hprofile $profile
 	    eend "$?" "Failed to start $profile profile"
@@ -18,7 +19,8 @@ start() {
 	return 0
 }
 
-stop() {
+stop()
+{
 	for profile in $PROFILES; do
 	    hprofile -s $profile
 	    eend "$?" "Failed to stop $profile profile"
@@ -26,4 +28,6 @@ stop() {
 	return 0
 }
 
+#
 # vim:fenc=utf-8:ft=gentoo-init-d:ci:pi:sts=0:sw=4:ts=4:
+#
