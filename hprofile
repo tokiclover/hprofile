@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/zsh
 #
 # Header: hprofile
 # Aythor:
@@ -7,15 +7,15 @@
 # License: GPL-2
 #
 
-shopt -qs nullglob
-shopt -qs extglob
+setopt EXTENDED_GLOB NULL_GLOB
+unsetopt KSH_ARRAYS
 
 declare -A PKG
 PKG=(
-	[name]=hprofile
-	[version]=3.0.3
-	[confdir]=/etc/hprofile
-	[logfile]=/var/log/hprofile.log
+	name    hprofile
+	version 4.0
+	confdir /etc/hprofile
+	logfile /var/log/hprofile.log
 )
 
 if [[ -f "${PKG[confdir]}/${PKG[name]}.conf" ]]; then
@@ -24,10 +24,10 @@ if [[ -f "${PKG[confdir]}/${PKG[name]}.conf" ]]; then
 fi
 
 function error {
-	if [[ "${HPROFILE[logfile]}" ]]; then
+	if (( ${+HPROFILE[logfile]} )); then
 		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
 	else
-		echo -e "\e[1;31m* \e[0m${PKG[name]}: ${@}" >&2
+		print -P " %B%F{red}*%b %1x: %F{yellow}%U%I%u%f: $argv" >&2
 	fi
 }
 
@@ -38,10 +38,10 @@ function die {
 }
 
 function info {
-	if [[ "${HPROFILE[logfile]}" ]]; then
+	if (( ${+HPROFILE[logfile]} )); then
 		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
 	else
-		echo -e "\e[1;32m \e[0m${PKG[name]}: ${@}"
+		print -P " %B%F{green}*%b%f %1x: $argv"
 	fi
 }
 
@@ -68,7 +68,7 @@ exit ${1:-?}
 }
 
 function version {
-	echo "${PKG[name]}-${PKG[version]}"
+	print -P "%B%F{blue}${PKG[name]} %F{white}version %F{magenta}${PKG[version]}%f%b"
 	exit
 }
 
@@ -110,20 +110,22 @@ function current-profile {
 # @ARGUMENTS: <script> <args>
 function run-script {
 	test "${#}" -ge 1 -a -s "${1}" || return
-	local file="${1}" head="${1%/*}" tail="${1##*/}"
+	local func="${argv[1]}"
 
-	local src name bash=$(type -p bash)
-	for src in "${dir}"/*([:alnum:])*.bash; do
+	local src zsh="${commands[zsh]}"
+	for src (${dir}/*[:alnum:]*.zsh(.N)); do
 		[[ -s "${src}" ]] || continue
-		name=${src##*/}
-		eval "${name//\./_}"="${src}"
+		function "${src:t}" {
+			source "${dir}/${0}"
+		}
 	done
 
-	function script {
-		source "${file}"
-	}
 	shift
-	script "$@"
+	function {
+		source "${func}"
+	} ${argv}
+
+	return 0
 }
 
 # @DESCRIPTION: Stop the current profile of the given type
@@ -132,7 +134,7 @@ function stop-profile {
 	[[ -n "${1}" ]] && local type="${1}" dir="${PROFILE[dir]}/profiles/${1}"
 	[[ -n "${2}" ]] && local profile="${2}"
 
-	echo -e "Stoping \e[1;32m${type}.\e[1;33m${profile}\e[0m profile"
+	print -P "%BStoping %F{green}${type}.%F{yellow}${profile}%f profile%b"
 
 	if [[ -s "${dir}/stop" ]]; then
 		function stop {
@@ -154,13 +156,13 @@ function stop-profile {
 function revert-profile {
 	local file="${PROFILE[dir]}/profiles/${1}/previous"
 	[[ -s "${file}" ]] && local previous=$(< "${file}") || return
-	[[ "${previous}" ]] && start-profile "${1}" "${previous}"
+	[[ -n "${previous}" ]] && start-profile "${1}" "${previous}"
 }
 
 # @DESCRIPTION: Print all known profile types
 function profile-type {
-	for dir in "${PROFILE[dir]}/profiles"/*([:alpha:])*; do
-		verify-profile "${dir}" && echo -n "${dir##*/} "
+	for dir ("${PROFILE[dir]}/profiles"/*[:alpha:]*(/N)); do
+		verify-profile "${dir}" && echo -n "${dir:t} "
 	done
 	echo
 	exit
@@ -174,10 +176,8 @@ function profile-list {
 	if [[ -s "${dir}/profiles" ]]; then
 		echo $(< "${dir}/profiles")
 	else
-		local file name
-		for file in "${dir}"/scripts/*([:alpha:])*.start; do
-			name="${file##*/}"
-			echo "${name%.start}"
+		for file ("${dir}"/scripts/*.start(.N)); do
+			echo "${${file:t}%.start}"
 		done
 	fi
 	exit
@@ -189,9 +189,8 @@ function profile-list {
 function swap-files {
 	local filesdir="${dir}/files" src dest
 
-	for src in $(find "${filesdir}" -name "*.${profile}"); do
-		dest="${src#${filesdir}}"
-		dest="${dest%.${profile}}"
+	for src (${filesdir}/**/*.${profile}(.N)); do
+		dest="${${src%.$profile}#$filesdir}"
 		if test -e "${dest}" -a ! -h "${dest}"; then
 			if ! diff "${dest}" "${src}" >/dev/null; then
 				mv -f "${dest}"{,.bak} || die "Failed to back up ${dest} file"
@@ -199,6 +198,7 @@ function swap-files {
 		fi
 		ln -fs "${src}" "${dest}" || die "Failed to restore ${src} to ${dest}"
 	done
+	popd -q
 }
 
 # @DESCRIPTION: Apply profile
@@ -208,7 +208,7 @@ function start-profile {
 	local dir="${PROFILE[dir]}/profiles/${1}"
 :	${dir="${dir%/}"}
 
-	echo -e "Starting \e[1;32m${type}.\e[1;33m${profile}\e[0m profile"
+	print -P "%BStarting %F{green}${type}.%F{yellow}${profile}%f profile%b"
 
 	# Stop profile
 	stop-profile
@@ -225,19 +225,17 @@ function start-profile {
 		fi
 	done
 	# Sym-link files if available
-	if [[ -d "${files}" ]]; then
+	if [[ -d "${dir}/files" ]]; then
 		swap-files || die "Failed to swap ${type}.${profile} files"
 	fi
 	# Save profile
 	echo "${profile}" >"${PROFILE[dir]}/profiles/${type}/current"
 }
 
-[[ "${1}" ]] || usage 2
+[[ -n "${argv}" ]] || usage 2
 
 declare -A PROFILE
-PROFILE=(
-	[dir]="${PKG[confdir]}"
-)
+PROFILE[dir]="${PKG[confdir]}"
 
 opt="$(getopt -n ${PKG[name]} -o hvtc:p:l:s:r:u: -l help,version \
 	-l profile:,type,current:,list:,stop:,revert,user: -- "$@" || usage)"
@@ -277,16 +275,16 @@ while (( $# > 1 )); do
 	esac
 done
 
-arg=(${1/./ })
-PROFILE[name]="${arg[1]}"
-PROFILE[type]="${arg[0]}"
+arg=(${=argv/./ })
+PROFILE[name]="${arg[2]}"
+PROFILE[type]="${arg[1]}"
 unset arg
 
-[[ "${PROFILE[type]}" ]] || die "Empty/null profile type"
-verify-profile "${PROFILE[type]}"
+[[ -n "${PROFILE[type]}" ]] || die "Empty/null profile type"
+ verify-profile "${PROFILE[type]}"
 
-[[ "${PROFILE[name]}" ]] || PROFILE[name]=$(get-profile "${PROFILE[type]}")
-[[ "${PROFILE[name]}" ]] ||
+[[ -n "${PROFILE[name]}" ]] || PROFILE[name]=$(get-profile "${PROFILE[type]}")
+[[ -n "${PROFILE[name]}" ]] ||
 	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
 
 start-profile "${PROFILE[type]}" "${PROFILE[name]}"
@@ -294,5 +292,5 @@ start-profile "${PROFILE[type]}" "${PROFILE[name]}"
 unset HPROFILE PKG PROFILE
 
 #
-# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
 #
