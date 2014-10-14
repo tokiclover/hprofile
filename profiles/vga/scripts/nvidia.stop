@@ -2,7 +2,6 @@
 # vga/scripts/nvidia.stop
 #
 
-info "Stoping vga.${1} profile"
 rmmod ${1} || die "Failed to remove ${1} kernel module"
 
 #

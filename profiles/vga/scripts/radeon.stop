@@ -2,7 +2,6 @@
 # vga/scripts/radeon.stop
 #
 
-info "Stopping fglrx vga profile."
 
 # Comment the following line and uncomment the other lines
 # to force remove nouveau/kms driver for e.g. fglrx

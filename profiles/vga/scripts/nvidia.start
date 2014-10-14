@@ -2,7 +2,6 @@
 # vga/scripts/nvidia.start
 #
 
-info "Starting vga.${1} profile"
 modprobe ${1} || die "Failed to insert ${1} kernel module"
 
 [[ "$(eselect opengl show)" != "${1}" ]] && eselect opengl set ${1}

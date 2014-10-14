@@ -2,7 +2,6 @@
 # vga/scripts/fglrx.stop
 #
 
-info "Stoping vga.${1} profile"
 rmmod ${1} || die "failed to remove ${1} module"
 
 #

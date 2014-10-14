@@ -2,7 +2,6 @@
 # vga/scripts/nouveau.stop
 #
 
-info "Stoping vga.${1} profile"
 
 # Uncomment the following line and last one if one need
 # to force remove nouveau/kms driver for e.g. nvidia

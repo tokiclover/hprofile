@@ -2,7 +2,6 @@
 # vga/scripts/fglrx.start
 #
 
-info "Starting vga.${1} profile"
 modprobe ${1} || die "Failed to insert ${1} kernel module"
 
 [ "$(eselect opengl show)" != "ati" ] && eselect opengl set ati
