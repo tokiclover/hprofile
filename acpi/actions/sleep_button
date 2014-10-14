@@ -1,3 +1,0 @@
-#!/bin/bash
-
-logger "Sleep button pressed; suspending"

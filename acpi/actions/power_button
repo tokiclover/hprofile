@@ -1,4 +1,0 @@
-#!/bin/bash
-
-logger "Power button pressed; shutting down."
-/sbin/shutdown -h now
