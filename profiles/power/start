@@ -5,23 +5,23 @@
 local cpu pci usb hda nmi vmw aspm scsi
 declare -A opt
 opt=(
-	[cpu]=${1:-powersave}
-	[pci]=${2:-auto}
-	[usb]=${3:-auto}
-	[hda]=${5:-1}
-	[nmi]=${6:-0}
-	[vmw]=${7:-1000}
-	[aspm]=${8:-default}
-	[scsi]=${4:-min_power}
+	cpu  ${1:-powersave}
+	pci  ${2:-auto}
+	usb  ${3:-auto}
+	hda  ${5:-1}
+	nmi  ${6:-0}
+	vmw  ${7:-1000}
+	aspm ${8:-default}
+	scsi ${4:-min_power}
 )
 
-for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+for cpu /sys/devices/system/cpu/cpu[0-9]*(/N); do
 	echo ${opt[cpu]} >$cpu/cpufreq/scaling_governor
 done
 
 [ -e /sys/module/pcie_aspm/parameters/policy ] &&
 	echo ${opt[aspm]} >/sys/module/pcie_aspm/parameters/policy >/dev/null 2>&1
-for scsi in /sys/class/scsi_host/host[0-9]*; do
+for scsi (/sys/class/scsi_host/host[0-9]*(/N)); do
 	[ -e $scsi/link_power_management_policy ] || continue
 	case "$(< $scsi/proc_name)" in
 		(ahci|usb-storage)
@@ -31,12 +31,12 @@ for scsi in /sys/class/scsi_host/host[0-9]*; do
 done
 
 # set usb host to auto powersave
-for usb in /sys/bus/usb/devices/{usb[0-9],[0-9]-[0-9]}; do
+for usb (/sys/bus/usb/devices/{usb[0-9],[0-9]-[0-9]}(/N)); do
 	echo ${opt[usb]} >$usb/power/control
 done
 
 # pci power control
-for pci in /sys/bus/pci/devices/0000:0*; do 
+for pci (/sys/bus/pci/devices/0000:0*(/N)); do
 	echo ${opt[pci]} >$pci/power/control
 done
 
@@ -59,9 +59,9 @@ local iface running
 
 for iface in $(ifconfig | sed -nre 's/(^[ew].*[0-9]{1}):.*/\1/p'); do
 	running="$(ifconfig $iface | sed -nre /$iface/'s/.*(RUNNING).*/\1/p')"
-	[[ "$running" ]] || ifconfig "$iface" down
+	[[ -n "$running" ]] || ifconfig "$iface" down
 done
 
 #
-# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
 #

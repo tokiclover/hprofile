@@ -2,20 +2,10 @@
 # disk/scripts/dyn.start
 #
 
-function _usb {
-	source "$usb_bash"
-}
-_usb
+usb.zsh
 
-function _ata {
-	source "$ata_bash"
-}
-ata=$(_ata)
-
-[[ "$ata" ]] && hdparm -q -S180 -B254 -M254 $ata
-
-unset _ata _usb ata
+for ata ($(ata.zsh)) hdparm -q -S180 -B254 -M254 $ata
 
 #
-# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
 #

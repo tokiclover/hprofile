@@ -1,15 +1,10 @@
 #
-# disk/usb.bash
+# disk/usb.zsh
 #
 
-shopt -qs extglob
-shopt -qs nullglob
-
-for dev in /sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*(sd[a-z])
-do
+for dev (/sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*sd[a-z](/N))
 	echo noop  >$dev/queue/scheduler
-done
 
 #
-# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
 #
