@@ -13,7 +13,7 @@ shopt -qs extglob
 declare -A PKG
 PKG=(
 	[name]=hprofile
-	[version]=3.0
+	[version]=3.0.3
 	[confdir]=/etc/hprofile
 	[logfile]=/var/log/hprofile.log
 )
@@ -75,7 +75,8 @@ function version {
 # @DESCRIPTION: Verify validity of a profile type
 # @ARGUMENTS: <type>
 function verify-profile {
-	test "${#}" -eq 1 -a -n "${1}" ||  die "Invalid profile type ${1}"
+	test "${#}" -eq 1 -a -n "${1}" -a "${1}" != "--" ||
+		die "Invalid profile type ${1}"
 	test -n "${dir}" -a -d "${dir}" || local dir="${PROFILE[dir]}/profiles/${1}"
 
 	test -e "${dir}/ptest"   -o -f "${dir}/profiles" -o \
@@ -130,6 +131,8 @@ function run-script {
 function stop-profile {
 	[[ -n "${1}" ]] && local type="${1}" dir="${PROFILE[dir]}/profiles/${1}"
 	[[ -n "${2}" ]] && local profile="${2}"
+
+	echo -e "Stoping \e[1;32m${type}.\e[1;33m${profile}\e[0m profile"
 
 	if [[ -s "${dir}/stop" ]]; then
 		function stop {
@@ -205,6 +208,8 @@ function start-profile {
 	local dir="${PROFILE[dir]}/profiles/${1}"
 :	${dir="${dir%/}"}
 
+	echo -e "Starting \e[1;32m${type}.\e[1;33m${profile}\e[0m profile"
+
 	# Stop profile
 	stop-profile
 	# Start profile
@@ -272,8 +277,10 @@ while (( $# > 1 )); do
 	esac
 done
 
-PROFILE[name]=$(echo "${1}" | cut -d. -f2 -s)
-PROFILE[type]="${1%.*}"
+arg=(${1/./ })
+PROFILE[name]="${arg[1]}"
+PROFILE[type]="${arg[0]}"
+unset arg
 
 [[ "${PROFILE[type]}" ]] || die "Empty/null profile type"
 verify-profile "${PROFILE[type]}"
