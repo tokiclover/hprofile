@@ -161,7 +161,7 @@ function revert-profile {
 
 # @DESCRIPTION: Print all known profile types
 function profile-type {
-	for dir ("${PROFILE[dir]}/profiles"/*[:alpha:]*(/N)); do
+	for dir ("${PROFILE[dir]}/profiles"/*(/N)); do
 		verify-profile "${dir}" && echo -n "${dir:t} "
 	done
 	echo
@@ -198,7 +198,6 @@ function swap-files {
 		fi
 		ln -fs "${src}" "${dest}" || die "Failed to restore ${src} to ${dest}"
 	done
-	popd -q
 }
 
 # @DESCRIPTION: Apply profile
@@ -206,7 +205,6 @@ function swap-files {
 function start-profile {
 	local type="${1}" profile="${2}"
 	local dir="${PROFILE[dir]}/profiles/${1}"
-:	${dir="${dir%/}"}
 
 	print -P "%BStarting %F{green}${type}.%F{yellow}${profile}%f profile%b"
 
