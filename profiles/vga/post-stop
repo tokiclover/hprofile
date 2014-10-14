@@ -2,7 +2,7 @@
 # vga/post-stop
 #
 
-if [ -e /sys/kernel/debug/vgaswitcheroo/switch ]; then
+if [[ -e /sys/kernel/debug/vgaswitcheroo/switch ]]; then
 	case ${1} in
 		(intel|radeon|nouveau)
 			echo ON >/sys/kernel/debug/vgaswitcheroo/switch;;
