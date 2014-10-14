@@ -2,7 +2,14 @@
 
 This a fork of the original [hprofile][1].
 
-hprofile is a bash shell script that can help you manage various profiles.
+hprofile is a shell script that can help you manage various profiles.
+
+    3.x.y is a bash script and thus depend on it;
+	4.x.y is a zsh  script and thus depend on it.
+	3/4 api change is that zsh will recongnize .zsh file extension in
+	    the profile directory; and those file are defined as function
+		with the same name.
+		(bash counterpart defined only file-bash=profile-dir/file.bash.)
 
 Examples could be:
 
