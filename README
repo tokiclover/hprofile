@@ -23,9 +23,11 @@ To be more complete on the description of profile type, it can also have:
 	   in particular (sub) profile(s); if present a particular (sub) profile can
 	   reference/use them by simply executing `start/stop <args>' because those
 	   two scripts will be sourced in hprofile easing execution;
-	8. script_name.bash: if present `script_name_bash' environment variable will
-	   hold the path `$sys_confdir/hprofile/profiles/<type>/script_name.bash' to
-	   ease execution or sourcing of extra scripts/files;
+	8a. script.bash: if present `script_bash' environment variable will
+	   hold the path `profile-directory/<type>/script_name.bash' to ease
+	   execution or sourcing of extra scripts/files (3.x/bash branch);
+	8b. script.zsh: if present the function of the same name will be defined
+	   to ease execution (4.x/zsh branch merged into master branch);
 	9. files/<mirror-files>: if present, this directory can hold a mirror of the
 	   filesystem with `.profile' suffix appended to each file; so those files
 	   will be moved to right place without suffix, actually sym-linked, when 
