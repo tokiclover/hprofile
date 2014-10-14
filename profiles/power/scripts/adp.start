@@ -5,7 +5,7 @@
 start "powersave" "auto" "auto" "min_power" "1" "0" "1000" "default"
 start-profile "disk" "adp"
 
-if [ -n "$DISPLAY" ]; then
+if (( $+DISPLAY )); then
     xbacklight -set 30
     xset dpms 300 400 600
 fi

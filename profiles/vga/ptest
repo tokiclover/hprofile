@@ -5,7 +5,7 @@
 local switch=/sys/kernel/debug/vgaswitcheroo/switch
 local drv
 
-if [  ! -e $switch ]; then
+if [[  ! -e $switch ]]; then
 	grep -q i915	/proc/modules || modprobe i915	  >/dev/null 2>&1
 	grep -q radeon  /proc/modules || modprobe radeon  >/dev/null 2>&1
 	grep -q nouveau /proc/modules || modprobe nouveau >/dev/null 2>&1

@@ -5,7 +5,7 @@
 
 # Uncomment the following line and last one if one need
 # to force remove nouveau/kms driver for e.g. nvidia
-if [ ! -e sys/kernel/debug/vgaswitcheroo/switch ]; then
+if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
 	echo 0 >/sys/class/vtconsole/vtcon1/bind
 	if ! rmmod nouveau; then
 		die "Failed to remove nouveau kernel module"
