@@ -13,7 +13,7 @@ depend()
 start()
 {
 	for profile in $PROFILES; do
-	    hprofile $profile
+	    hprofile -f $profile
 	    eend "$?" "Failed to start $profile profile"
 	done
 	return 0
