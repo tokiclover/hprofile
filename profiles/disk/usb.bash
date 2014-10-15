@@ -2,12 +2,12 @@
 # disk/usb.bash
 #
 
-shopt -qs extglob
-shopt -qs nullglob
-
 for dev in /sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*(sd[a-z])
 do
-	echo noop  >$dev/queue/scheduler
+	case "$(< $dev/removable)" in
+		(1) echo noop >$dev/queue/scheduler;;
+		(0) echo cfq >$dev/queue/scheduler;;
+	esac
 done
 
 #
