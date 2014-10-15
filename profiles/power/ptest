@@ -7,8 +7,8 @@ local state
 if test -e /sys/class/power_supply/A*; then
 	state=$(< /sys/class/power_supply/A*/online)
 	case $state in
-		1) echo "adp";;
-		0) echo "bat";;
+		(1) echo "adp";;
+		(0) echo "bat";;
 	esac
 fi
 
