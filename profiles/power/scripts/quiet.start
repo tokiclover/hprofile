@@ -5,9 +5,9 @@
 start "powersave" "auto" "auto" "min_power" "1" "0" "2500" "powersave"
 start-profile "disk" "quiet"
 
-if [ -n "$DISPLAY" ]; then
-    xbacklight -set 30
-    xset dpms 300 400 600
+if [[ "$DISPLAY" ]]; then
+	xbacklight -set 30
+	xset dpms 300 400 600
 fi
 
 #
