@@ -2,11 +2,11 @@
 # disk/ptest
 #
 
-local state
+local state="$(echo /sys/class/power_supply/A*)"
 
-if test -e /sys/class/power_supply/A*; then
-	state=$(< /sys/class/power_supply/A*/online)
-	case $state in
+if test -n "$state" -a -r "$state"; then
+	state=$(< "$state")
+	case "$state" in
 		(1) echo "adp";;
 		(0) echo "bat";;
 	esac
