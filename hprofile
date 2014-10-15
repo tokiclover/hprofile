@@ -60,6 +60,7 @@ function usage {
     -h, --help               Print this help message
     -v, --version            Print pkgname-version_string
     -r, --revert=<type>      Revert to the previous known <type> profile
+    -f, --force              Apply profile regardless of the current one
 
   <type>                     Switch to the currently valid <type> profile
   <type>.<profile>           Switch to the given <type>.<profile> profile
@@ -235,13 +236,22 @@ function start-profile {
 declare -A PROFILE
 PROFILE[dir]="${PKG[confdir]}"
 
-opt="$(getopt -n ${PKG[name]} -o hvtc:p:l:s:r:u: -l help,version \
-	-l profile:,type,current:,list:,stop:,revert,user: -- "$@" || usage)"
-eval set -- "$opt"
+declare -a opt
+opt=(
+	"-n" "${PKG[name]}"
+	"-o" "?fhvtc:p:l:s:r:u:"
+	"-l" "force,help,version,profile:,type,current:,list:,stop:,revert,user:"
+)
+opt=($(getopt "${opt[@]}" -- "${argv[@]}" || usage))
+eval set -- "${opt[@]}"
 
 while (( $# > 1 )); do
 	case "${1}" in
-		(-h|--help) usage 0;;
+		(-f|--force)
+			PROFILE[force]=
+			shift
+			;;
+		('-?'|-h|--help) usage 0;;
 		(-v|--version) version;;
 		(-t|--type)	profile-type;;
 		(-c|--current)
@@ -273,18 +283,21 @@ while (( $# > 1 )); do
 	esac
 done
 
-arg=(${=argv/./ })
+arg=(${=argv[1]/./ })
 PROFILE[name]="${arg[2]}"
 PROFILE[type]="${arg[1]}"
 unset arg
 
 [[ -n "${PROFILE[type]}" ]] || die "Empty/null profile type"
- verify-profile "${PROFILE[type]}"
+verify-profile "${PROFILE[type]}"
 
 [[ -n "${PROFILE[name]}" ]] || PROFILE[name]=$(get-profile "${PROFILE[type]}")
 [[ -n "${PROFILE[name]}" ]] ||
 	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
 
+PROFILE[current]=$(current-profile "${PROFILE[type]}")
+[[ "${PROFILE[name]}" == "${PROFILE[current]}" ]] &&
+	(( ${+PROFILE[force]} )) || return 0
 start-profile "${PROFILE[type]}" "${PROFILE[name]}"
 
 unset HPROFILE PKG PROFILE
