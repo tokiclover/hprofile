@@ -4,11 +4,11 @@
 
 local state=$(print /sys/class/power_supply/A*/online(.N))
 
-if test -n $state -a -r $state; then
+if test -n "$state" -a -r "$state"; then
 	state=$(< $state)
 	case $state in
-		1) echo "adp";;
-		0) echo "bat";;
+		(1) echo "adp";;
+		(0) echo "bat";;
 	esac
 fi
 
