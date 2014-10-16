@@ -296,8 +296,9 @@ verify-profile "${PROFILE[type]}"
 	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
 
 PROFILE[current]=$(current-profile "${PROFILE[type]}")
-[[ "${PROFILE[name]}" == "${PROFILE[current]}" ]] &&
+if [[ "${PROFILE[name]}" == "${PROFILE[current]}" ]]; then
 	(( ${+PROFILE[force]} )) || return 0
+fi
 start-profile "${PROFILE[type]}" "${PROFILE[name]}"
 
 unset HPROFILE PKG PROFILE
