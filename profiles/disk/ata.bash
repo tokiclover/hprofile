@@ -2,9 +2,6 @@
 # disk/ata.bash
 #
 
-shopt -qs extglob
-shopt -qs nullglob
-
 echo /sys/devices/pci*/*/ata*/host*/target*/*/block/*(sd[a-z])
 
 #
