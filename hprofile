@@ -133,7 +133,8 @@ function run-script {
 # @ARGUMENTS: <inherited>|<type> <profile>
 function stop-profile {
 	[[ -n "${1}" ]] && local type="${1}" dir="${PROFILE[dir]}/profiles/${1}"
-	[[ -n "${2}" ]] && local profile="${2}"
+	local current="$(current-profile)"
+	[[ -n "${current}" ]] && local profile="${current}" || return 0
 
 	print -P "%BStoping %F{green}${type}.%F{yellow}${profile}%f profile%b"
 
