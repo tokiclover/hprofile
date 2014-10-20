@@ -131,7 +131,8 @@ function run-script {
 # @ARGUMENTS: <inherited>|<type> <profile>
 function stop-profile {
 	[[ -n "${1}" ]] && local type="${1}" dir="${PROFILE[dir]}/profiles/${1}"
-	[[ -n "${2}" ]] && local profile="${2}"
+	local current="$(current-profile)"
+	[[ -n "${current}" ]] && local profile="${current}" || return 0
 
 	echo -e "Stoping \e[1;32m${type}.\e[1;33m${profile}\e[0m profile"
 
