@@ -1,5 +1,5 @@
 PACKAGE     = hprofile
-VERSION     = $(shell sed -nre '16,/\t\[/s/\tversion ([0-9].*)/\1/p' $(PACKAGE))
+VERSION     = $(shell sed -nre '16s/\t\[version\]=([0-9].*)/\1/p' $(PACKAGE))
 
 prefix      = /usr/local
 bindir      = $(prefix)/bin
@@ -23,7 +23,7 @@ dist_ACPI   = \
 	actions/power \
 	events/power
 dist_PROFILE_disk   = \
-	 ata.zsh \
+	 ata.bash \
 	 default \
 	 post-start \
 	 profiles \
@@ -32,7 +32,7 @@ dist_PROFILE_disk   = \
 	 scripts/bat.start \
 	 scripts/dyn.start \
 	 scripts/quiet.start \
-	 usb.zsh
+	 usb.bash
 dist_PROFILE_power  = \
 	 default \
 	 profiles \
