@@ -13,7 +13,7 @@ shopt -qs extglob
 declare -A PKG
 PKG=(
 	[name]=hprofile
-	[version]=3.0.3
+	[version]=3.0.6
 	[confdir]=/etc/hprofile
 	[logfile]=/var/log/hprofile.log
 )
