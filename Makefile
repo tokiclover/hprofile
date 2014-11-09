@@ -119,6 +119,9 @@ uninstall: $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
 	rm -f $(DESTDIR)$(svcconfdir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(sysconfdir)/acpi/actions/power
 	rm -f $(DESTDIR)$(sysconfdir)/acpi/events/power
+	for dir in $(DISTDIRS); do \
+		rmdir $(DESTDIR)$${dir}; \
+	done
 	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles
 uninstall-profile-%:
 	for file in $(dist_PROFILE_$*); do \
