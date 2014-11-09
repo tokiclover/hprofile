@@ -112,19 +112,21 @@ $(PROFILES): .FORCE
 
 .PHONY: uninstall uninstall-doc
 
-uninstall:
+uninstall: $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
 	rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$(PACKAGE).conf
 	rm -f $(DESTDIR)$(bindir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(svcinitdir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(svcconfdir)/$(PACKAGE)
-	for profile in $(PROFILES); do \
-		rm -f -r $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$${profile}; \
-	done
 	rm -f $(DESTDIR)$(sysconfdir)/acpi/actions/power
 	rm -f $(DESTDIR)$(sysconfdir)/acpi/events/power
-	for dir in $(DISTDIRS); do \
-		rmdir $(DESTDIR)$${dir}; \
+	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles
+uninstall-profile-%:
+	for file in $(dist_PROFILE_$*); do \
+		rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*/$${file}; \
 	done
+	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*/files/etc/X11/xorg.conf.d
+	-rmdir $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*/scripts
+	-rmdir $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*
 uninstall-doc:
 	for doc in $(dist_EXTRA); do \
 		rm -f $(DESTDIR)$(docdir)/$${doc}; \
