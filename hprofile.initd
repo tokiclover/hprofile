@@ -1,6 +1,6 @@
 #!/sbin/runscript
-# Copyright 1999-2014 Gentoo Foundation
-# Distributed under the terms of the 2-clause BSD or GPL-2 license
+# Copyright 2014 tclover <tokiclover@hprofile.project>
+# Distributed under the terms of the GPL-2 license
 # $Header: hprofile.initd,v 1.4 2014/10/10 13:05:23 -tclover Exp $
 
 description="initialize hprofile boot profiles"
