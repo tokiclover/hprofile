@@ -1,12 +1,24 @@
+4.0:
+
+API change:
+	1. zsh scripts found in profile directory <profile-dir>/<script>.zsh
+	   will be used to define function(s) of the same name.
+
+3.1:
+
+API change:
+	1. now bash counter part define function of the same name of
+	   <profile-dir>/<script>.bash (same API/functionalities as zsh/master).
+
 3.0:
 
-* cleaned the mess to have a KISS script:
+cleaned the mess to have a KISS script:
     1. no need to have multiple sub-shell to be able to move a few files and
 	   run a few commands;
 	2. speed/effiency wise, the previous version was a disaster, hopefully
 	   this script was used for simple things;
 	3. who need hundreds of lines to move a few files and exec a few cmds?!
-* changed *API*:
+API change:
     1. no +x executable bit needed anymore as everthing can be runned in a
 	   single shell, so source-ing is prefered for efficiency/speed;
 	2. as exececuted scripts are sourced, scripts have access to internal
