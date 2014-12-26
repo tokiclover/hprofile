@@ -1,22 +1,5 @@
 
 ---
-bash fails to expand variable after `function' keyword, so no:
-
-function $var {
-}
-
-is allowed because bash takes `$var' as a string literal.
-So, script_name.bash in prfoile directory cannot be defined beforhand as
-functions. This is where the:
-
-function ata {
-	source "$ata_bash"
-}
-
-comes from. Sorry for that, but extra scripts should taken care of in particular
-sub-profile files, either by defining a function (more effecient and is worth the
-definition) by a call like `${bash:-bash} -c "$script_name_bash"' (sub-shell and
-cal by value... far from being optimal solution.)
 
 ---
 
