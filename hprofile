@@ -116,8 +116,7 @@ function run-script {
 	local src name bash=$(type -p bash)
 	for src in "${dir}"/*([:alnum:])*.bash; do
 		[[ -s "${src}" ]] || continue
-		name=${src##*/}
-		eval "function ${name%.bash} { \
+		eval "function ${src##*/} { \
 			source \"${src}\"; \
 		}"
 	done
