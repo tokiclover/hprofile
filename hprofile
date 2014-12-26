@@ -13,7 +13,7 @@ shopt -qs extglob
 declare -A PKG
 PKG=(
 	[name]=hprofile
-	[version]=3.0.6
+	[version]=3.1.0
 	[confdir]=/etc/hprofile
 	[logfile]=/var/log/hprofile.log
 )
@@ -117,7 +117,9 @@ function run-script {
 	for src in "${dir}"/*([:alnum:])*.bash; do
 		[[ -s "${src}" ]] || continue
 		name=${src##*/}
-		eval "${name//\./_}"="${src}"
+		eval "function ${name%.bash} { \
+			source \"${src}\"; \
+		}"
 	done
 
 	function script {

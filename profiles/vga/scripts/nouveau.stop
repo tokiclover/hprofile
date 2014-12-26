@@ -10,6 +10,7 @@ if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
 	if ! rmmod nouveau; then
 		die "Failed to remove nouveau kernel module"
 	else
+		[[ -x /etc/init.d/consolefont ]] &&
 		/etc/init.d/consolefont restart
 		rmmod ttm
 		rmmod drm_kms_helper

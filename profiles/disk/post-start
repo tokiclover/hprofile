@@ -2,11 +2,7 @@
 # disk/post-start
 #
 
-function _ata {
-	source "$ata_bash"
-}
-
-for dev in $(_ata); do
+for dev in $(ata.bash); do
     echo cfq  >$dev/queue/scheduler
     echo 0    >$dev/queue/iosched/slice_idle
     echo 64   >$dev/queue/iosched/quantum
@@ -14,8 +10,7 @@ for dev in $(_ata); do
     echo 1024 >$dev/queue/nr_requests
     echo 2    >$dev/device/queue_depth
 done
-
-unset _ata dev
+unset dev
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:

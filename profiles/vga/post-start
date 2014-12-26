@@ -2,6 +2,7 @@
 # vga/post-start
 #
 
+[[ -x /etc/init.d/consolefont ]] &&
 /etc/init.d/consolefont restart
 
 #
