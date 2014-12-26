@@ -116,15 +116,15 @@ function run-script {
 	local src zsh="${commands[zsh]}"
 	for src (${dir}/*[:alnum:]*.zsh(.N)); do
 		[[ -s "${src}" ]] || continue
-		function "${src:t}" {
-			source "${dir}/${0}"
-		}
+		eval "function \"${src:t}\" { \
+			source \"${src}\"; \
+		}"
 	done
 
 	shift
-	function {
-		source "${func}"
-	} ${argv}
+	eval "function { \
+		source \"${func}\"; \
+	} ${argv}"
 
 	return 0
 }
