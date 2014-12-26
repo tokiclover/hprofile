@@ -111,7 +111,7 @@ function current-profile {
 # @ARGUMENTS: <script> <args>
 function run-script {
 	test "${#}" -ge 1 -a -s "${1}" || return
-	local file="${1}" head="${1%/*}" tail="${1##*/}"
+	local file="${1}"
 
 	local src name bash=$(type -p bash)
 	for src in "${dir}"/*([:alnum:])*.bash; do
@@ -122,9 +122,9 @@ function run-script {
 		}"
 	done
 
-	function script {
-		source "${file}"
-	}
+	eval "function script {
+		source \"${file}\"; \
+	}"
 	shift
 	script "$@"
 }
