@@ -2,7 +2,8 @@ PACKAGE     = hprofile
 VERSION     = $(shell sed -nre '16s/\t\[version\]=([0-9].*)/\1/p' $(PACKAGE))
 
 prefix      = /usr/local
-bindir      = $(prefix)/bin
+exec_prefix = $(prefix)
+bindir      = $(exec_prefix)/bin
 sysconfdir	= /etc
 svcconfdir	= $(sysconfdir)/conf.d
 svcinitdir	= $(sysconfdir)/init.d
