@@ -78,7 +78,7 @@ DISTDIRS    = \
 	$(datadir) $(docdir) \
 	$(svcconfdir) $(svcinitdir) $(sysconfdir) \
 	$(sysconfdir)/acpi/actions $(sysconfdir)/acpi/events
-DISTFILES   =
+DISTFILES   = $(dist_EXTRA) $(PROFILES)
 .SECONDEXPANSION:
 PROFILES    = \
 	disk \
@@ -92,7 +92,7 @@ PROFILES    = \
 all:
 
 install-doc : $(dist_EXTRA)
-install: $(DISTDIRS) $(PROFILES)
+install: $(DISTDIRS) $(DISTFILES)
 	$(install_DATA)   $(PACKAGE).conf  $(DESTDIR)$(sysconfdir)/$(PACKAGE)
 	$(install_SCRIPT) $(PACKAGE)       $(DESTDIR)$(bindir)
 	$(install_SCRIPT) $(PACKAGE).initd $(DESTDIR)$(svcinitdir)/$(PACKAGE)
