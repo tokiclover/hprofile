@@ -78,7 +78,7 @@ DISTDIRS    = \
 	$(datadir) $(docdir) \
 	$(svcconfdir) $(svcinitdir) $(sysconfdir) \
 	$(sysconfdir)/acpi/actions $(sysconfdir)/acpi/events
-DISTFILES   = $(dist_EXTRA) $(PROFILES)
+DISTFILES   = $(PROFILES)
 .SECONDEXPANSION:
 PROFILES    = \
 	disk \
