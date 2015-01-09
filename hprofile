@@ -13,7 +13,7 @@ unsetopt KSH_ARRAYS
 declare -A PKG
 PKG=(
 	name    hprofile
-	version 4.1.1
+	version 4.2.0
 	confdir /etc/hprofile
 	logfile /var/log/hprofile.log
 )
