@@ -9,6 +9,7 @@ svcconfdir	= $(sysconfdir)/conf.d
 svcinitdir	= $(sysconfdir)/init.d
 datadir     = $(prefix)/share/$(PACKAGE)
 docdir      = $(prefix)/share/doc/$(PACKAGE)-${VERSION}
+mandir      = $(prefix)/share/man
 
 INSTALL     = install
 install_SCRIPT = $(INSTALL) -m 755
@@ -18,7 +19,7 @@ MKDIR_P     = mkdir -p
 dist_EXTRA  = \
 	AUTHORS \
 	COPYING \
-	README \
+	README.md \
 	ChangeLog
 dist_ACPI   = \
 	actions/power \
@@ -76,7 +77,7 @@ dist_PROFILE_vga    = \
 	 scripts/radeon.stop
 DISTDIRS    = \
 	$(bindir) \
-	$(datadir) $(docdir) \
+	$(datadir) $(docdir) $(mandir)/man1 \
 	$(svcconfdir) $(svcinitdir) $(sysconfdir) \
 	$(sysconfdir)/acpi/actions $(sysconfdir)/acpi/events
 DISTFILES   = $(PROFILES)
@@ -98,6 +99,7 @@ install: $(DISTDIRS) $(DISTFILES)
 	$(install_SCRIPT) $(PACKAGE)       $(DESTDIR)$(bindir)
 	$(install_SCRIPT) $(PACKAGE).initd $(DESTDIR)$(svcinitdir)/$(PACKAGE)
 	$(install_DATA)   $(PACKAGE).confd $(DESTDIR)$(svcconfdir)/$(PACKAGE)
+	$(install_DATA)   $(PACKAGE).1     $(DESTDIR)$(mandir)/man1
 	$(install_SCRIPT) acpi/actions/power $(DESTDIR)$(sysconfdir)/acpi/actions/power
 	$(install_DATA)   acpi/events/power  $(DESTDIR)$(sysconfdir)/acpi/events/power
 
@@ -116,6 +118,7 @@ $(PROFILES): .FORCE
 uninstall: $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
 	rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$(PACKAGE).conf
 	rm -f $(DESTDIR)$(bindir)/$(PACKAGE)
+	rm -f $(DESTDIR)$(mandir)/man1/$(PACKAGE).1
 	rm -f $(DESTDIR)$(svcinitdir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(svcconfdir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(sysconfdir)/acpi/actions/power
