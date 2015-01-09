@@ -130,7 +130,14 @@ When a child profile becomes active, files found in `<PROFILE>/files' directory
 with the extension `<profile>' are symlinked to the file system (without the
 `/etc/hprofile/profiles/<PROFILE>/files'.)
 .SH CONFIGURATION
+The main configuration can be used to set up logging option,
+and extra environment variables for particular profiles.
 .SH EXAMPLES
+Start power profile depending on hardware state
+  hprofile power
+
+Probe the actual power profile
+  hprofile -c power
 .SH FILES
 .TP
 .BR /etc/{conf,init}.d/hprofile
