@@ -77,7 +77,7 @@ dist_PROFILE_vga    = \
 	 scripts/radeon.stop
 DISTDIRS    = \
 	$(bindir) \
-	$(datadir) $(docdir) $(mandir)/man1 \
+	$(docdir) $(mandir)/man1 \
 	$(svcconfdir) $(svcinitdir) $(sysconfdir) \
 	$(sysconfdir)/acpi/actions $(sysconfdir)/acpi/events
 DISTFILES   = $(PROFILES)
