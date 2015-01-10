@@ -67,7 +67,7 @@ exit ${1:-?}
 }
 
 function version {
-	echo "${PKG[name]}-${PKG[version]}"
+	echo "${PKG[name]} version ${PKG[version]}"
 	exit
 }
 
