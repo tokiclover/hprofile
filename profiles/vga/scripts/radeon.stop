@@ -3,11 +3,11 @@
 #
 
 
-# Comment the following line and uncomment the other lines
+# UNComment the following line and uncomment the other lines
 # to force remove nouveau/kms driver for e.g. fglrx
 if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
 #	echo 0 >/sys/class/vtconsole/vtcon1/bind
-	if ! rmmod nouveau; then
+	if ! rmmod radeon; then
 		echo "failed to remove fglrx module"
 	else
 		[[ -x /etc/init.d/consolefont ]] &&
