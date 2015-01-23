@@ -3,12 +3,14 @@
 #
 
 
-# Uncomment the following line and last one if one need
-# to force remove nouveau/kms driver for e.g. nvidia
+#
+# FIXME: Comment out & edit if necessary to unload
+#        nouveau/drm/kms/ttm i.e. to be able to load nVidia.
+#
 if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
 	echo 0 >/sys/class/vtconsole/vtcon1/bind
 	if ! rmmod nouveau; then
-		die "Failed to remove nouveau kernel module"
+		die "Failed to remove ${1} kernel module"
 	else
 		[[ -x /etc/init.d/consolefont ]] &&
 		/etc/init.d/consolefont restart

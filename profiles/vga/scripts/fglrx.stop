@@ -2,7 +2,10 @@
 # vga/scripts/fglrx.stop
 #
 
-rmmod ${1} || die "failed to remove ${1} module"
+rmmod ${1} || die "Failed to remove ${1} module"
+#
+# FIXME: Is this necessary? Comment out if necessary.
+#
 rmmod uvesafb > /dev/null 2>&1
 
 #
