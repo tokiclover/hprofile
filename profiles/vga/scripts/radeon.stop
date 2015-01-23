@@ -3,12 +3,14 @@
 #
 
 
-# UNComment the following line the other lines
-# to force remove radeon/kms driver for e.g. fglrx
+#
+# FIXME: Comment in & edit if necessary to unload
+#        radeon/drm/kms/ttm i.e. to be able to load Fglrx.
+#
 if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
 #	echo 0 >/sys/class/vtconsole/vtcon1/bind
 	if ! rmmod radeon; then
-		echo "failed to remove fglrx module"
+		echo "Failed to remove ${1} module"
 	else
 		[[ -x /etc/init.d/consolefont ]] &&
 		/etc/init.d/consolefont restart
