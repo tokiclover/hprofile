@@ -2,16 +2,13 @@
 # disk/ptest
 #
 
-local state=$(print /sys/class/power_supply/A*/online(.N))
+local state="$(cat /sys/class/power_supply/A*/online 2>$NULL)"
 
-if test -n "$state" -a -r "$state"; then
-	state=$(< $state)
-	case $state in
-		(1) echo "adp";;
-		(0) echo "bat";;
-	esac
-fi
+case "$state" in
+	(0) echo "bat";;
+	(*) echo "adp";;
+esac
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

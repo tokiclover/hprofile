@@ -4,13 +4,13 @@
 #
 
 start "powersave" "auto" "auto" "min_power" "1" "0" "1500" "powersave"
-start-profile "disk" "bat"
+start_profile "disk" "bat"
 
-if (( $+DISPLAY )); then
-    xbacklight -set 30
-    xset dpms 300 400 600
+if [ -n "$DISPLAY" ]; then
+	xbacklight -set 10
+	xset dpms 200 200 300
 fi
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

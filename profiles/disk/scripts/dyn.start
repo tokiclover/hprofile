@@ -2,10 +2,12 @@
 # disk/scripts/dyn.start
 #
 
-usb.zsh
+usb
 
-for ata ($(ata.zsh)) hdparm -q -S180 -B254 -M254 $ata
+for dev in $(ata); do
+	hdparm -q -S180 -B254 -M254 $dev >$NULL 2>&1
+done
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

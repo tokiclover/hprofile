@@ -3,13 +3,13 @@
 #
 
 start "performance" "on" "on" "mix_power" "0" "1" "500" "performance"
-start-profile "disk" "dyn"
+start_profile "disk" "dyn"
 
-if (( $+DISPLAY )); then
-    xbacklight -set 30
-    xset dpms 300 400 600
+if [ -n "$DISPLAY" ]; then
+	xbacklight -set 30
+	xset dpms 400 500 600
 fi
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

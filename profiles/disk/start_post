@@ -2,15 +2,13 @@
 # disk/post-start
 #
 
-for dev ($(ata.zsh)); do
+for dev in $(ata); do
     echo cfq  >$dev/queue/scheduler
-    echo 0    >$dev/queue/iosched/slice_idle
-    echo 64   >$dev/queue/iosched/quantum
     # more opitmizations with ncq
-    echo 1024 >$dev/queue/nr_requests
+    echo 31   >$dev/queue/nr_requests
     echo 2    >$dev/device/queue_depth
 done
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

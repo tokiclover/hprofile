@@ -4,14 +4,14 @@
 
 modprobe i915 || die "Failed to insert i915 kernel module"
 
-if [[ -e /sys/kernel/debug/vgaswitcheroo/switch ]]; then
+if [ -e /sys/kernel/debug/vgaswitcheroo/switch ]; then
 	echo IGD >/sys/kernel/debug/vgaswitcheroo/switch &&
 	echo OFF >/sys/kernel/debug/vgaswitcheroo/switch
 fi
 
-[[ $(eselect opengl show) != 'xorg-x11' ]] && eselect opengl set 'xorg-x11'
-[[ $(eselect xvmc   show) != 'intel-i915/i965' ]] && eselect xvmc set 'intel-i915/i965'
+[ "$(eselect opengl show)" != "xorg-x11" ] && eselect opengl set 'xorg-x11'
+[ "$(eselect xvmc   show)" != "intel-i915/i965" ] && eselect xvmc set 'intel-i915/i965'
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

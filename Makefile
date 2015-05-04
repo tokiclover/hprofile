@@ -25,16 +25,16 @@ dist_ACPI   = \
 	actions/power \
 	events/power
 dist_PROFILE_disk   = \
-	 ata.zsh \
+	 ata.sh \
 	 default \
-	 post-start \
+	 start_post \
 	 profiles \
 	 ptest \
 	 scripts/adp.start \
 	 scripts/bat.start \
 	 scripts/dyn.start \
 	 scripts/quiet.start \
-	 usb.zsh
+	 usb.sh
 dist_PROFILE_power  = \
 	 default \
 	 profiles \
@@ -62,8 +62,8 @@ dist_PROFILE_vga    = \
 	 files/etc/X11/xorg.conf.d/40-monitor.conf.nv \
 	 files/etc/X11/xorg.conf.d/40-monitor.conf.nvidia \
 	 files/etc/X11/xorg.conf.d/40-monitor.conf.radeon \
-	 post-start \
-	 post-stop \
+	 start_post \
+	 stop_post \
 	 profiles \
 	 ptest \
 	 scripts/fglrx.start \

@@ -7,12 +7,12 @@
 # FIXME: Comment out & edit if necessary to unload
 #        nouveau/drm/kms/ttm i.e. to be able to load nVidia.
 #
-if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
+if [ ! -e sys/kernel/debug/vgaswitcheroo/switch ]; then
 	echo 0 >/sys/class/vtconsole/vtcon1/bind
 	if ! rmmod nouveau; then
 		die "Failed to remove ${1} kernel module"
 	else
-		[[ -x /etc/init.d/consolefont ]] &&
+		[ -x /etc/init.d/consolefont ] &&
 		/etc/init.d/consolefont restart
 		rmmod ttm
 		rmmod drm_kms_helper
@@ -21,5 +21,5 @@ if [[ ! -e sys/kernel/debug/vgaswitcheroo/switch ]]; then
 fi
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

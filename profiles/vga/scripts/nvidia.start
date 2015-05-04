@@ -2,10 +2,10 @@
 # vga/scripts/nvidia.start
 #
 
-modprobe uvesafb > /dev/null 2>&1
+modprobe uvesafb > $NULL 2>&1
 modprobe ${1} || die "Failed to insert ${1} kernel module"
 
-[[ $(eselect opengl show) != ${1} ]] && eselect opengl set ${1}
+[ "$(eselect opengl show)" != "${1}" ] && eselect opengl set ${1}
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:

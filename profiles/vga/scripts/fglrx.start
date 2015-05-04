@@ -2,11 +2,11 @@
 # vga/scripts/fglrx.start
 #
 
-modprobe uvesafb > /dev/null 2>&1
+modprobe uvesafb > $NULL 2>&1
 modprobe ${1} || die "Failed to insert ${1} kernel module"
 
-[[ $(eselect opengl show) != ati ]] && eselect opengl set ati
-[[ $(eselect xvmc   show) != ati ]] && eselect xvmc   set ati
+[ "$(eselect opengl show)" != "ati" ] && eselect opengl set ati
+[ "$(eselect xvmc   show)" != "ati" ] && eselect xvmc   set ati
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:

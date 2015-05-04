@@ -3,10 +3,12 @@
 #
 
 
-usb.zsh
+usb
 
-for ata ($(ata.zsh)) hdparm -q -S120 -B200 -M200 $ata
+for dev in $(ata); do
+	hdparm -q -S120 -B200 -M200 $dev >$NULL 2>&1
+done
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

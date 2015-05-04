@@ -1,13 +1,13 @@
 #
-# disk/usb.zsh
+# disk/usb.sh
 #
 
-for dev (/sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*sd[a-z](/N))
-	case "$(< $dev/removable)" in
+for dev in /sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*sd[a-z]; do
+	case "$(cat $dev/removable)" in
 		(1) echo noop >$dev/queue/scheduler;;
 		(0) echo cfq  >$dev/queue/scheduler;;
 	esac
-
+done
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #

@@ -3,13 +3,13 @@
 #
 
 start "powersave" "auto" "auto" "min_power" "1" "0" "2500" "powersave"
-start-profile "disk" "quiet"
+start_profile "disk" "quiet"
 
-if (( $+DISPLAY )); then
-    xbacklight -set 30
-    xset dpms 300 400 600
+if [ -n "$DISPLAY" ]; then
+	xbacklight -set 15
+	xset dpms 150 200 300
 fi
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #
