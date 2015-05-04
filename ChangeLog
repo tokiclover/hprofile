@@ -1,3 +1,8 @@
+6.0.0:
+
+Converted the API to use a single PROFILE-functions instead of using
+dozen of tiny files which greatly simplify profiles management.
+
 5.0.0:
 
 Converted the utility to plain POSIX shell script; and added
