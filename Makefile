@@ -7,9 +7,9 @@ bindir      = $(exec_prefix)/bin
 sysconfdir	= /etc
 svcconfdir	= $(sysconfdir)/conf.d
 svcinitdir	= $(sysconfdir)/init.d
-datadir     = $(prefix)/share/$(PACKAGE)
-docdir      = $(prefix)/share/doc/$(PACKAGE)-${VERSION}
-mandir      = $(prefix)/share/man
+datadir     = $(prefix)/share
+docdir      = $(datadir)/doc
+mandir      = $(datadir)/man
 
 INSTALL     = install
 install_SCRIPT = $(INSTALL) -m 755
@@ -24,61 +24,17 @@ dist_EXTRA  = \
 dist_ACPI   = \
 	actions/power \
 	events/power
-dist_PROFILE_disk   = \
-	 ata.sh \
-	 default \
-	 start_post \
-	 profiles \
-	 ptest \
-	 scripts/adp.start \
-	 scripts/bat.start \
-	 scripts/dyn.start \
-	 scripts/quiet.start \
-	 usb.sh
-dist_PROFILE_power  = \
-	 default \
-	 profiles \
-	 ptest \
-	 scripts/adp.start \
-	 scripts/bat.start \
-	 scripts/dyn.start \
-	 scripts/med.start \
-	 scripts/quiet.start \
-	 start
-dist_PROFILE_rfkill = \
-	 default \
-	 profiles \
-	 scripts/bsw.start \
-	 scripts/bsw.stop \
-	 scripts/ksw.start \
-	 scripts/ksw.stop \
-	 scripts/wsw.start \
-	 scripts/wsw.stop
 dist_PROFILE_vga    = \
-	 default \
-	 files/etc/X11/xorg.conf.d/40-monitor.conf.fglrx \
-	 files/etc/X11/xorg.conf.d/40-monitor.conf.intel \
-	 files/etc/X11/xorg.conf.d/40-monitor.conf.nouveau \
-	 files/etc/X11/xorg.conf.d/40-monitor.conf.nv \
-	 files/etc/X11/xorg.conf.d/40-monitor.conf.nvidia \
-	 files/etc/X11/xorg.conf.d/40-monitor.conf.radeon \
-	 start_post \
-	 stop_post \
-	 profiles \
-	 ptest \
-	 scripts/fglrx.start \
-	 scripts/fglrx.stop \
-	 scripts/intel.start \
-	 scripts/nouveau.start \
-	 scripts/nouveau.stop \
-	 scripts/nvidia.start \
-	 scripts/nvidia.stop \
-	 scripts/radeon.start \
-	 scripts/radeon.stop
+	 etc/X11/xorg.conf.d/40-monitor.conf.fglrx \
+	 etc/X11/xorg.conf.d/40-monitor.conf.intel \
+	 etc/X11/xorg.conf.d/40-monitor.conf.nouveau \
+	 etc/X11/xorg.conf.d/40-monitor.conf.nv \
+	 etc/X11/xorg.conf.d/40-monitor.conf.nvidia \
+	 etc/X11/xorg.conf.d/40-monitor.conf.radeon
 DISTDIRS    = \
 	$(bindir) \
-	$(docdir) $(mandir)/man1 \
-	$(svcconfdir) $(svcinitdir) $(sysconfdir) \
+	$(docdir)/$(PACKAGE)-$(VERSION) $(mandir)/man1 \
+	$(svcconfdir) $(svcinitdir) $(sysconfdir)/$(PACKAGE) \
 	$(sysconfdir)/acpi/actions $(sysconfdir)/acpi/events
 DISTFILES   = $(PROFILES)
 .SECONDEXPANSION:
@@ -94,29 +50,28 @@ PROFILES    = \
 all:
 
 install-doc : $(dist_EXTRA)
-install: $(DISTDIRS) $(DISTFILES)
-	$(install_DATA)   $(PACKAGE).conf  $(DESTDIR)$(sysconfdir)/$(PACKAGE)
+install: install-dir $(DISTFILES)
 	$(install_SCRIPT) $(PACKAGE)       $(DESTDIR)$(bindir)
 	$(install_SCRIPT) $(PACKAGE).initd $(DESTDIR)$(svcinitdir)/$(PACKAGE)
 	$(install_DATA)   $(PACKAGE).confd $(DESTDIR)$(svcconfdir)/$(PACKAGE)
 	$(install_DATA)   $(PACKAGE).1     $(DESTDIR)$(mandir)/man1
 	$(install_SCRIPT) acpi/actions/power $(DESTDIR)$(sysconfdir)/acpi/actions/power
 	$(install_DATA)   acpi/events/power  $(DESTDIR)$(sysconfdir)/acpi/events/power
-
+	$(install_DATA) -D hp.vim $(DESTDIR)$(datadir)/vim/vimfiles/syntax/hp.vim
 $(dist_EXTRA): .FORCE
-	$(install_DATA) $@ $(DESTDIR)$(docdir)/$@
-$(DISTDIRS): .FORCE
-	$(MKDIR_P) $(DESTDIR)$@
+	$(install_DATA) $@ $(DESTDIR)$(docdir)/$(PACKAGE)-$(VERSION)/$@
+install-dir: .FORCE
+	$(MKDIR_P) $(DISTDIRS:%=$(DESTDIR)%)
 $(PROFILES): .FORCE
+	$(install_DATA) $@-functions $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$@-functions
 	for file in $(dist_PROFILE_$@); do \
-		$(install_DATA) -D profiles/$@/$${file} \
-		$(DESTDIR)/$(sysconfdir)/$(PACKAGE)/profiles/$@/$${file}; \
+		$(install_DATA) -D $@/$${file} \
+		$(DESTDIR)/$(sysconfdir)/$(PACKAGE)/$@/$${file}; \
 	done
 
 .PHONY: uninstall uninstall-doc
 
-uninstall: $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
-	rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$(PACKAGE).conf
+uninstall: uninstall-doc $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
 	rm -f $(DESTDIR)$(bindir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(mandir)/man1/$(PACKAGE).1
 	rm -f $(DESTDIR)$(svcinitdir)/$(PACKAGE)
@@ -126,17 +81,14 @@ uninstall: $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
 	for dir in $(DISTDIRS); do \
 		rmdir $(DESTDIR)$${dir}; \
 	done
-	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles
 uninstall-profile-%:
 	for file in $(dist_PROFILE_$*); do \
-		rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*/$${file}; \
+		rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$*/$${file}; \
 	done
-	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*/files/etc/X11/xorg.conf.d
-	-rmdir $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*/scripts
-	-rmdir $(DESTDIR)$(sysconfdir)/$(PACKAGE)/profiles/$*
+	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$*
+	rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$*-functions
 uninstall-doc:
 	for doc in $(dist_EXTRA); do \
-		rm -f $(DESTDIR)$(docdir)/$${doc}; \
+		rm -f $(DESTDIR)$(docdir)/$(PACKAGE)-$(VERSION)/$${doc}; \
 	done
-	rmdir $(DESTDIR)$(docdir)
 
