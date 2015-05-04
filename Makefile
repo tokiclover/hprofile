@@ -1,5 +1,5 @@
 PACKAGE     = hprofile
-VERSION     = $(shell sed -nre '16,/\t\[/s/\tversion ([0-9].*)/\1/p' $(PACKAGE))
+VERSION     = $(shell sed -nre '1s/(.*):/\1/p' ChangeLog)
 
 prefix      = /usr/local
 exec_prefix = $(prefix)
