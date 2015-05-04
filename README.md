@@ -4,8 +4,9 @@ INTRODUCTION
 ------------
 
 hprofile is a shell script utility to manage profiles (hardware/software.)
-(3.x is a bash script while	4.x is a zsh counterpart on {ba,z}sh branches,
-while 5.x is POSIX shell.)
+(3.x is a bash script while	4.x is a zsh counterpart on {ba,z}sh branches;
+while 5.x is POSIX shell and 6.x use a simplified file hierarchy variant
+with a single PROFILE-functions file instead of the numerous tiny files.)
 
 The sources tarball comes with the following profiles.
 

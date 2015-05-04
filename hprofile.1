@@ -5,15 +5,16 @@
 .\" as pugblished by the Free Software Fondation, Inc.
 .\"
 .pc
-.TH HPROFILE 1 "2015-05-01" "5.0.0" "Hprofile Script Page"
+.TH HPROFILE 1 "2015-05-04" "6.0.0" "Hprofile Script Page"
 .SH NAME
 hprofile \- soft/hardware profiles management utility
 .SH DESCRIPTION
 This shell script utility can manage multiple profiles, be it hardware, or sotware related.
 A
 .I profile
-(in hprofile terms) is just a directory containing child profile scripts
-and extra (configuration) files to be swaped, actualy symlinked, when the appropriate profile
+(in hprofile terms) is just a functions file defining
+child profiles {start,stop}_<profile> functions and other helpers; And
+(configuration) files to be swaped, actualy symlinked, when the appropriate profile
 becomes active. See
 .B LAYOUTS
 and
@@ -64,69 +65,77 @@ T}
 .SH LAYOUTS
 A hprofile
 .I <PROFILE>
-is a directory hierarchy that may contain the following files.
-Almost everything is optional, meaning a profile could have only child profile
-`scripts/*.{start,stop}'. Start/Stop scripts can be used as a shared script
-between child profiles, and thus, can be used like `start <ARGS>' or `stop <ARGS>'
-in the child profiles.
-{start,stop}{,_{post,pre}} script can be used to do common tasks before and or after starting and or
-stopping a child profile.
+is a shell functions file and an optional directory hierarchy that may contain
+system mirror files.
+Almost everything is optional, meaning a profile could have only child profiles
+`{start,stop}_<profile>' defined in `<PROFILE>-functions' file.
+{start,stop}{,_{post,pre}} functions can be used to do common tasks before and
+or after starting and or stopping a child profile.
 
-To sum up, only `\fI<PROFILE>\fR/profiles' file is required along with at least
-a `scripts/*.start' file for each child profile to define a valid profile.
+To sum up, only `\fI<PROFILE>-functions\fR' file is required along with at least
+a `start_<profile>' function for each child profile to define a valid profile.
+A list of child profiles is defined using `PROFILES' variable, while the default
+child profile is defined with `DEFAULT' variable.
 .TP
-.B /etc/hprofile/profiles/\fI<PROFILE>\fR
+.B /etc/hprofile/\fI<PROFILE>-functions\fR
 .TS
 tab (@);
 l lx.
-\fBdefault\fR@T{
+\fBDEFAULT\fR@T{
 Default child profile to use when starting (parent) profile type (optional)
 T}
-\fBptest\fR@T{
-Dynamic profile probing script to determine which (child) profile to use (optional)
-T}
-\fBprofiles\fR@T{
+\fBPROFILES\fR@T{
 List supported (chid) profiles (required)
 T}
-\fBstart\fR@T{
-Start (common) script and can be used by child profiles (optional)
-T}
-\fBstop\fR@T{
-Stop (common) script and can be used by child profiles (optional)
+\fBstart_test\fR@T{
+Dynamic profile probing function to determine which (child) profile to use (optional)
 T}
 \fBstart_post\fR@T{
-Start-Script to execute after starting a child profile (optional)
+Clean up helper executed after starting a child profile (optional)
 T}
 \fBstart_pre\fR@T{
-Start-Script to execute before starting a chid profile (optional)
+Set up helper executed before starting a chid profile (optional)
 T}
 \fBstop_post\fR@T{
-Stop-Script to execute after stopping a child profile (optional)
+Clean up helper executed after stopping a child profile (optional)
 T}
 \fBstop_pre\fR@T{
-Stop-Script to execute before stopping a child profile (optional)
+Set up helper executed before stopping a child profile (optional)
 T}
-\fBfiles/**/*.<profile>\fR@T{
-Files hierarchy to swap (or rather symlink) when a child profile become active
+\fBstart_<profile>\fR@T{
+Start helper executed to activate a child profile (optional)
 T}
-\fBscripts/\fR\fI<profile>\fR\fB.start\fR@T{
-Child profile activation Start-Script (required for each child profile)
-T}
-\fBscripts/\fR\fI<profile>\fR\fB.stop\fR@T{
-Child profile deactivation Stop-Script (optional for each child profile)
-T}
-\fI<SCRIPT>\fR\fB.sh\fR@T{
-Each file found would be defined as a function name (without the .sh extension)
+\fBstop_<profile>\fR@T{
+Stop helper executed to deactivate a child profile (optional)
 T}
 .TE
 .RE
+.TP
+.B <PROFILE>/**/*.<profile>
 
-When a child profile becomes active, files found in `<PROFILE>/files' directory
-with the extension `<profile>' are symlinked to the file system (minus the
-`/etc/hprofile/profiles/<PROFILE>/files' head.)
-.SH CONFIGURATION
-The main configuration can be used to set up 
-and extra environment variables for particular profiles.
+Files hierarchy to swap (or rather symlink) when a child profile become active,
+files found in `<PROFILE>/' directory
+with the extension `.<profile>' are symlinked to the file system (minus the
+`/etc/hprofile/<PROFILE>' head.)
+.SH ENVIRONMENT
+.TP
+.B CONFDIR=/etc/hprofile
+System wide profile directory
+.TP
+.B DIR=CONFDIR|HOME/.hprofile
+Environment variable holding the current profile directory
+.TP
+.B RUNDIR=/var/run
+Run-time directory (for <profile>-{current,previous} files)
+.TP
+.B NULL=/dev/null
+Enviroment variable defining null file
+.TP
+.B COLOR=No
+Dis/enable output color support
+.TP
+.B name
+Variable holding the header of message output
 .SH EXAMPLES
 Start power profile depending on hardware state
   hprofile power
@@ -144,7 +153,7 @@ Main
 .B hprofile
 configuration file.
 .TP
-.BR /etc/hprofile/profiles/PROFILES
+.BR /etc/hprofile/PROFILES
 .TP
 .B PROFILES
 
@@ -172,47 +181,22 @@ Medium profile (balence between qerformance & quiet)
 T}
 .TE
 .TP
-.SS disk
-.br
-.RB ata.sh
-.RB default
-.RB start_post
-.RB profiles
-.RB ptest
-.RB scripts/{adp,bat,dyn,quiet}.start
-.RB usb.sh
+.B disk[-functions]
 
 This profile is tailored to manage hard disk drive and thus depends on hdparm.
 .TP
-.SS power
-.br
-.RB default
-.RB profiles
-.RB ptest
-.RB scripts/{adp,bat,dyn,med,quiet}.start
-.RB start
+.B power[-functions]
 
 This profile was made to be a superset of other profiles, so it depends on disk
 profile. Other profiles can be added (like rfkill profile, for example.)
 .TP
-.SS rfkill
-.br
-.RB default
-.RB profiles
-.RB scripts/{bsw,ksw,wsw}.{start,stop}
+.B rfkill[-functions]
 
 RFKill wireless radio profile (Note: B for Bluetooth, W for Wireless, K for Kill, and
 SW for SWitch.)
 .TP
-.SS vga
-.br
-.RB default
-.RB start_post
-.RB stop_post
-.RB profiles
-.RB ptest
-.RB scripts/{fglrx,intel,nouveau,nv,nvidia,radeon}.{start,stop}
-.RB files/etc/X11/xorg.conf.d/40-monitor.conf.{fglrx,intel,nouveau,nv,nvidia,radeon}
+.B vga[-functions]
+.RB vga/etc/X11/xorg.conf.d/40-monitor.conf.{fglrx,intel,nouveau,nv,nvidia,radeon}
 
 Graphics Hardware (GPU) profile that can be used to switch between different
 hardware and or drivers.
