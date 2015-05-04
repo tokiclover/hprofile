@@ -40,16 +40,6 @@ start_test()
 	[ "${drv}" = "i915" ] && drv=intel
 	echo "${drv}"
 }
-start_post()
-{
-	local dev
-	for dev in $(ata); do
-    	echo cfq  >${dev}/queue/scheduler
-    	# NCQ opitmizations
-    	echo 31   >${dev}/queue/nr_requests
-    	echo 2    >${dev}/device/queue_depth
-	done
-}
 
 start_fglrx()
 {
