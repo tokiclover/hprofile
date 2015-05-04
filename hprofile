@@ -182,8 +182,9 @@ current_profile()
 #
 run_cmd()
 {
-	if command -v ${1} >${NULL} 2>&1; then
-		eval ${1}
+	local CMD="${1}"; shift
+	if command -v ${CMD} >${NULL} 2>&1; then
+		eval ${CMD} "${@}"
 	else
 		return 111
 	fi
@@ -196,19 +197,19 @@ run_cmd()
 stop_profile()
 {
 	local cmd ret p c
-	c="$(current_profile)"
+	c="${CURRENT:-$(current_profile)}"
 	[ -n "${c}" ] && p="${c}" || return 0
 
 	begin "Stoping ${CLR_GRN}${1}.${CLR_YLW}${p}${CLR_RST} profile"
 	for cmd in stop_pre stop_${p} stop_post; do
-		run_cmd "${cmd}"
+		run_cmd "${cmd}" "${p}"
 		case ${?} in
 			(111) ;;
 			(*) ret=$((${ret}+${?}));;
 		esac
 	done
 	end ${ret}
-	[ ${ret} = 0 ] || return ${ret}
+	[ ${ret:-0} = 0 ] || return ${ret}
 	echo        > "${RUNDIR}/${1}-current"
 	echo "${p}" > "${RUNDIR}/${1}-previous"
 }
@@ -269,7 +270,7 @@ start_profile()
 	# Start profile
 	begin "Starting ${CLR_GRN}${1}.${CLR_YLW}${2}${CLR_RST} profile"
 	for cmd in start_pre start_${2} start_post; do
-		run_cmd "${cmd}"
+		run_cmd "${cmd}" "${2}"
 		case ${?} in
 			(111) ;;
 			(*) ret=$((${ret}+${?}));;
@@ -277,7 +278,7 @@ start_profile()
 	done
 	end ${ret}
 	# Save profile
-	[ ${ret} = 0 ] && echo "${2}" >"${RUNDIR}/${1}-current" || return ${ret}
+	[ ${ret:-0} = 0 ] && echo "${2}" >"${RUNDIR}/${1}-current" || return ${ret}
 	# Sym-link files if available
 	if [ -d "${DIR}/${1}" ]; then
 		swap_files "${1}" "${2}" || error "Failed to swap ${1}.${2} files"
