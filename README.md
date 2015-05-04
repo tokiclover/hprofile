@@ -4,7 +4,8 @@ INTRODUCTION
 ------------
 
 hprofile is a shell script utility to manage profiles (hardware/software.)
-(3.x is a bash script while	4.x is a zsh counterpart.)
+(3.x is a bash script while	4.x is a zsh counterpart on {ba,z}sh branches,
+while 5.x is POSIX shell.)
 
 The sources tarball comes with the following profiles.
 
@@ -50,4 +51,3 @@ as pugblished by the Free Software Fondation, Inc.
      **USE AT YOUR OUWN RISK, EVERYTHING IS GIVEN 'AS IS'**
 
 [1]: http://hprofile.sourceforge.net
-

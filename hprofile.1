@@ -5,21 +5,15 @@
 .\" as pugblished by the Free Software Fondation, Inc.
 .\"
 .pc
-.TH HPROFILE 1 "2015-01-01" "3.2.0" "Hprofile Script Page"
+.TH HPROFILE 1 "2015-05-01" "5.0.0" "Hprofile Script Page"
 .SH NAME
-hprofile \- profiles management tool
+hprofile \- soft/hardware profiles management utility
 .SH DESCRIPTION
-.B hprofile
-require either
-.IR bash
-(for 3.x branch) or
-.IR zsh
-(for 4.x branch).
-The tool can manage multiple profile, be it hardware, or sotware related.
+This shell script utility can manage multiple profiles, be it hardware, or sotware related.
 A
-.BI profile
+.I profile
 (in hprofile terms) is just a directory containing child profile scripts
-and extra files to be swaped, actualy symlinked, when the appropriate profile
+and extra (configuration) files to be swaped, actualy symlinked, when the appropriate profile
 becomes active. See
 .B LAYOUTS
 and
@@ -46,26 +40,27 @@ T}
 .TE
 
 .B hprofile
-.RB [\| \-f|\-\-force \|]
-.RB [\| \-u|\-\-user= \|\c
+.RB [\| -d|--debug \|]
+.RB [\| -f|--force \|]
+.RB [\| -u|--user= \|\c
 .RI \| <user> \|]
 .RI \| <type> \|\c
 .RB [\| .\fI<profile>\fR \|]
 
 .B hprofile
-.RB [\| \-c|\-\-current= \|\c
+.RB [\| \-c|--current= \|\c
 .RI \| <type> \|]
-.RB [\| \-l|\-\-list= \|\c
+.RB [\| -l|--list= \|\c
 .RI \| <type> \|]
-.RB [\| \-r|\-\-revert= \|\c
+.RB [\| -r|--revert= \|\c
 .RI \| <type> \|]
-.RB [\| \-s|\-\-stop= \|\c
+.RB [\| -s|--stop= \|\c
 .RI \| <type> \|]
-.RB [\| \-t|\-\-type \|]
+.RB [\| -t|--type \|]
 
 .B hprofile
-.RB [\| \-h|\-\-help \|]
-.RB [\| \-v|\-\-version \|]
+.RB [\| -h|--help \|]
+.RB [\| -v|--version \|]
 .SH LAYOUTS
 A hprofile
 .I <PROFILE>
@@ -74,7 +69,7 @@ Almost everything is optional, meaning a profile could have only child profile
 `scripts/*.{start,stop}'. Start/Stop scripts can be used as a shared script
 between child profiles, and thus, can be used like `start <ARGS>' or `stop <ARGS>'
 in the child profiles.
-Pre/Post-{Start,Stop} script can be used to do common tasks when starting or
+{start,stop}{,_{post,pre}} script can be used to do common tasks before and or after starting and or
 stopping a child profile.
 
 To sum up, only `\fI<PROFILE>\fR/profiles' file is required along with at least
@@ -99,16 +94,16 @@ T}
 \fBstop\fR@T{
 Stop (common) script and can be used by child profiles (optional)
 T}
-\fBpost-start\fR@T{
+\fBstart_post\fR@T{
 Start-Script to execute after starting a child profile (optional)
 T}
-\fBpre-start\fR@T{
+\fBstart_pre\fR@T{
 Start-Script to execute before starting a chid profile (optional)
 T}
-\fBpost-stop\fR@T{
+\fBstop_post\fR@T{
 Stop-Script to execute after stopping a child profile (optional)
 T}
-\fBpre-stop\fR@T{
+\fBstop_pre\fR@T{
 Stop-Script to execute before stopping a child profile (optional)
 T}
 \fBfiles/**/*.<profile>\fR@T{
@@ -120,17 +115,17 @@ T}
 \fBscripts/\fR\fI<profile>\fR\fB.stop\fR@T{
 Child profile deactivation Stop-Script (optional for each child profile)
 T}
-\fI<SCRIPT>\fR\fB.$SHELL\fR@T{
-Each file found would be defined as a function (to ease execution)
+\fI<SCRIPT>\fR\fB.sh\fR@T{
+Each file found would be defined as a function name (without the .sh extension)
 T}
 .TE
 .RE
 
 When a child profile becomes active, files found in `<PROFILE>/files' directory
-with the extension `<profile>' are symlinked to the file system (without the
-`/etc/hprofile/profiles/<PROFILE>/files'.)
+with the extension `<profile>' are symlinked to the file system (minus the
+`/etc/hprofile/profiles/<PROFILE>/files' head.)
 .SH CONFIGURATION
-The main configuration can be used to set up logging option,
+The main configuration can be used to set up 
 and extra environment variables for particular profiles.
 .SH EXAMPLES
 Start power profile depending on hardware state
@@ -179,13 +174,13 @@ T}
 .TP
 .SS disk
 .br
-.RB ata.$SHELL
+.RB ata.sh
 .RB default
-.RB post-start
+.RB start_post
 .RB profiles
 .RB ptest
 .RB scripts/{adp,bat,dyn,quiet}.start
-.RB usb.$SHELL
+.RB usb.sh
 
 This profile is tailored to manage hard disk drive and thus depends on hdparm.
 .TP
@@ -212,8 +207,8 @@ SW for SWitch.)
 .SS vga
 .br
 .RB default
-.RB post-start
-.RB post-stop
+.RB start_post
+.RB stop_post
 .RB profiles
 .RB ptest
 .RB scripts/{fglrx,intel,nouveau,nv,nvidia,radeon}.{start,stop}
