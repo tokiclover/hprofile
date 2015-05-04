@@ -18,14 +18,11 @@ elif [ -n "${BASH_VERSION}" ]; then
 fi
 
 PKG=hprofile
-VERSION=5.0.0
-CONFDIR=/etc/hprofile
+VERSION=6.0.0
+CONFDIR=/etc/${PKG}
+RUNDIR=/var/run
 NULL=/dev/null
 name=${PKG}
-
-if [ -f "${CONFDIR}/${PKG}.conf" ]; then
-	source "${CONFDIR}/${PKG}.conf"
-fi
 
 #
 # @FUNCTION: Print error message to stderr
@@ -154,11 +151,9 @@ version()
 verify_profile()
 {
 	[ "${#}" = 1  ] && [ -n "${1}"   ] || die "Invalid profile type ${1}"
-	[ -n "${dir}" ] && [ -d "${dir}" ] || local dir="${DIR}/profiles/${1}"
-
-	[ -e "${dir}/ptest"   ] || [ -f "${dir}/profiles"  ] ||
-	[ -f "${dir}"/default ] || [ -e "${dir}"/start_pre ] ||
-	[ -e "${dir}"/start_post ] || die "Invalid profile type ${2}"
+	[ -n "${PROFILE}" -a -f "${PROFILE}" ] && return
+	PROFILE="${DIR}/${1}-functions"
+	[ -f "${PROFILE}" ] && source "${PROFILE}"
 }
 
 #
@@ -167,15 +162,8 @@ verify_profile()
 #
 get_profile()
 {
-	local dir="${DIR}/profiles/${1}" name="${2}"
-
-	[ -z "${name}" ] && [ -s "${dir}/ptest"   ] && name=$(run_script "${dir}/ptest")
-	[ -z "${name}" ] && [ -s "${dir}/default" ] && name=$(cat "${dir}/default")
-
-	[ -z "${name}" ] && [ -s "${profiles}" ] &&
-		name=$(sed -nre '0,/^[a-zA-Z].*/p' "${profiles}")
-
-	echo "${name}"
+	run_cmd start_test && return
+	[ -n "${DEFAULT}" ] && echo "${DEFAULT}" || echo -n "${PROFILES%% *}"
 }
 
 #
@@ -184,7 +172,7 @@ get_profile()
 #
 current_profile()
 {
-	local file="${DIR}/profiles/${1}/current"
+	local file="${RUNDIR}/${1}-current"
 	[ -s "${file}" ] && echo $(cat "${file}")
 }
 
@@ -192,23 +180,13 @@ current_profile()
 # @FUNCTION: run script passed as positional parameter 1
 # @ARGS: <script> <args>
 #
-run_script()
+run_cmd()
 {
-	[ "${#}" -ge 1 ] && [ -s "${1}" ] || return
-	local func="${1}"
-
-	local src tail
-	for src in ${dir}/*[:alnum:]*.sh; do
-		[ -s "${src}" ] || continue
-		tail="${src##*/}"
-		eval "${tail%.sh}() { source \"${src}\"; }"
-	done
-
-	shift
-	eval "script() { source \"${func}\"; }"
-	script "${@}"
-
-	return 0
+	if command -v ${1} >${NULL} 2>&1; then
+		eval ${1}
+	else
+		return 111
+	fi
 }
 
 #
@@ -217,23 +195,22 @@ run_script()
 #
 stop_profile()
 {
-	[ -n "${1}" ] && local type="${1}" dir="${DIR}/profiles/${1}"
-	local current="$(current_profile)"
-	[ -n "${current}" ] && local profile="${current}" || return 0
+	local cmd ret p c
+	c="$(current_profile)"
+	[ -n "${c}" ] && p="${c}" || return 0
 
-	echo -e "Stoping ${CLR_GRN}${type}.${CLR_YLW}${profile}${CLR_RST} profile"
-
-	if [ -s "${dir}/stop" ]; then
-		stop() { source "${dir}/stop"; }
-	fi
-	for scr in stop_pre scripts/${profile}.stop stop_post; do
-		if [ -s "${dir}/${scr}" ]; then
-			run_script "${dir}/${scr}" "${profile}" ||
-				die "Failed to run ${type}/${scr} script"
-		fi
+	begin "Stoping ${CLR_GRN}${1}.${CLR_YLW}${p}${CLR_RST} profile"
+	for cmd in stop_pre stop_${p} stop_post; do
+		run_cmd "${cmd}"
+		case ${?} in
+			(111) ;;
+			(*) ret=$((${ret}+${?}));;
+		esac
 	done
-	echo              > "${DIR}/profiles/${type}/current"
-	echo "${profile}" > "${DIR}/profiles/${type}/previous"
+	end ${ret}
+	[ ${ret} = 0 ] || return ${ret}
+	echo        > "${RUNDIR}/${1}-current"
+	echo "${p}" > "${RUNDIR}/${1}-previous"
 }
 
 #
@@ -242,9 +219,9 @@ stop_profile()
 #
 revert_profile()
 {
-	local file="${DIR}/profiles/${1}/previous"
-	[ -s "${file}" ] && local previous=$(cat "${file}") || return
-	[ -n "${previous}" ] && start_profile "${1}" "${previous}"
+	local file="${RUNDIR}/${1}-previous" p
+	[ -s "${file}" ] && p=$(cat "${file}") || return
+	[ -n "${p}" ] && start_profile "${1}" "${p}"
 }
 
 #
@@ -252,30 +229,11 @@ revert_profile()
 #
 profile_type()
 {
-	for dir in "${DIR}/profiles"/*; do
-		verify_profile "${dir}" && echo -n "${dir##*/} "
+	local f t
+	for f in "${DIR}"/*-functions; do
+		t="${f##*/}"; echo -n "${t%-*} "
 	done
 	echo
-	exit
-}
-
-#
-# @FUNCTION: Print all valid profiles of the given type
-# @ARGS: <type>
-#
-profile_list()
-{
-	local dir="${DIR}/profiles/${1}"
-
-	if [ -s "${dir}/profiles" ]; then
-		echo $(cat "${dir}/profiles")
-	else
-		local tail
-		for file in "${dir}"/scripts/*.start; do
-			tail="${file##*/}"
-			echo "${file%.start}"
-		done
-	fi
 	exit
 }
 
@@ -286,17 +244,16 @@ profile_list()
 #
 swap_files()
 {
-	local filesdir="${dir}/files" src dest
-
-	for src in $(find "${filesdir}" -name "*.${profile}"); do
-		dest="${src#${filesdir}}"
-		dest="${dest%.${profile}}"
+	local src dest
+	for src in $(find "${DIR}/${1}" -name "*.${2}"); do
+		dest="${src#${DIR}/${1}}"; dest="${dest%.${2}}"
 		if [ -e "${dest}" ] && [ ! -h "${dest}" ]; then
 			if ! diff "${dest}" "${src}" >${NULL}; then
-				mv -f "${dest}" "${dest}\~" || die "Failed to back up ${dest} file"
+				mv -f "${dest}" "${dest}\~" ||
+				{ error "Failed to back up ${dest} file"; continue; }
 			fi
 		fi
-		ln -fs "${src}" "${dest}" || die "Failed to restore ${src} to ${dest}"
+		ln -fs "${src}" "${dest}" || error "Failed to restore ${src} to ${dest}"
 	done
 }
 
@@ -306,29 +263,25 @@ swap_files()
 #
 start_profile()
 {
-	local type="${1}" profile="${2}"
-	local dir="${DIR}/profiles/${1}"
-
-	echo -e "Starting ${CLR_GRN}${type}.${CLR_YLW}${profile}${CLR_RST} profile"
-
+	local cmd ret
 	# Stop profile
-	stop_profile
+	stop_profile "${1}"
 	# Start profile
-	if [ -s "${dir}/start" ]; then
-		start() { source "${dir}/start"; }
-	fi
-	for scr in start_pre scripts/${profile}.start start_post; do
-		if [ -s "${dir}/${scr}" ]; then
-			run_script "${dir}/${scr}" "${profile}" ||
-				die "Failed to run ${type}/${scr} script"
-		fi
+	begin "Starting ${CLR_GRN}${1}.${CLR_YLW}${2}${CLR_RST} profile"
+	for cmd in start_pre start_${2} start_post; do
+		run_cmd "${cmd}"
+		case ${?} in
+			(111) ;;
+			(*) ret=$((${ret}+${?}));;
+		esac
 	done
-	# Sym-link files if available
-	if [ -d "${dir}/files" ]; then
-		swap_files || die "Failed to swap ${type}.${profile} files"
-	fi
+	end ${ret}
 	# Save profile
-	echo "${profile}" >"${DIR}/profiles/${type}/current"
+	[ ${ret} = 0 ] && echo "${2}" >"${RUNDIR}/${1}-current" || return ${ret}
+	# Sym-link files if available
+	if [ -d "${DIR}/${1}" ]; then
+		swap_files "${1}" "${2}" || error "Failed to swap ${1}.${2} files"
+	fi
 }
 
 [ ${#} -ge 1 ] || usage 2
@@ -358,11 +311,11 @@ while true; do
 			exit;;
 		(-l|--list)
 			verify_profile "${2}"
-			profile_list   "${2}";;
+			echo "${PROFILES}"; exit;;
 		(-s|--stop)
 			verify_profile "${2}"
-			stop_profile "${2}" && exit || die "Could not stop ${2} profile"
-			;;
+			stop_profile "${2}"
+			exit;;
 		(-r|--revert)
 			verify_profile "${2}"
 			revert_profile "${2}"
@@ -377,7 +330,7 @@ NAME="${2}"
 TYPE="${1}"
 
 [ -n "${TYPE}" ] || die "Empty/null profile type"
-verify_profile "${TYPE}"
+verify_profile "${TYPE}" || die "Invalid profile type"
 
 [ -n "${NAME}" ] || NAME=$(get_profile "${TYPE}")
 [ -n "${NAME}" ] || die "Could not find ${NAME} profile ${TYPE}"
