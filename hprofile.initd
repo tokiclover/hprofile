@@ -1,7 +1,7 @@
 #!/sbin/runscript
 # (c) 201[45] tclover <tokiclover@hprofile.project>
 # Distributed under the terms of the GPL-2 license
-# $Header: hprofile.initd,v 1.4 2015/05/01 13:05:23 -tclover Exp $
+# $Header: /etc/init.d/hprofile,v 1.4 2015/05/05 13:05:23 -tclover Exp $
 
 description="Soft/hardware profiles utility service"
 
@@ -12,18 +12,22 @@ depend()
 
 start()
 {
-	for profile in $PROFILES; do
-	    hprofile -f $profile
-	    eend "$?" "Failed to start $profile profile"
+	local p
+	for p in ${PROFILES}; do
+		ebegin "Starting ${p} profile"
+		hprofile -f ${p}
+		eend "${?}"
 	done
 	return 0
 }
 
 stop()
 {
-	for profile in $PROFILES; do
-	    hprofile -s $profile
-	    eend "$?" "Failed to stop $profile profile"
+	local p
+	for p in ${PROFILES}; do
+		ebegin "Stopping ${p} profile"
+		hprofile -s ${p}
+		eend "${?}"
 	done
 	return 0
 }
