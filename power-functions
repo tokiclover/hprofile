@@ -1,0 +1,105 @@
+#
+# power-functions
+#
+
+PROFILES='bat adp dyn quiet'
+DEFAULT=adp
+
+xbl()
+{
+	[ -n "${DISPLAY}" ] || return 0
+	xbacklight -set ${1:-20}
+	xset dpms ${2:-300} ${3:-400} ${4:-600}
+}
+
+start()
+{
+	local CPU PCI USB HDA NMI VMW ASPM SCSI
+	local cpu pci usb hda nmi vmw aspm scsi
+
+	CPU=${1:-powersave} PCI=${2:-auto} USB=${3:-auto}
+	HDA=${5:-1} NMI=${6:-0} VMW=${7:-1000}
+	ASPM=${8:-default} 	SCSI=${4:-min_power}
+
+	for cpu in /sys/devices/system/cpu/cpu[0-9]*; do
+		echo ${CPU} >$cpu/cpufreq/scaling_governor
+	done
+	[ -e /sys/module/pcie_aspm/parameters/policy ] &&
+		echo ${ASPM} >/sys/module/pcie_aspm/parameters/policy >$NULL 2>&1
+	for scsi in /sys/class/scsi_host/host[0-9]*; do
+		[ -e $scsi/link_power_management_policy ] || continue
+		case "$(cat $scsi/proc_name)" in
+			(ahci|usb-storage)
+				echo ${SCSI} >$scsi/link_power_management_policy;;
+			(*) ;;
+		esac
+	done
+	# Set usb host to auto powersave
+	for usb in /sys/bus/usb/devices/{usb[0-9],[0-9]-[0-9]}; do
+		echo ${USB} >$usb/power/control
+	done
+	# PCI power control
+	for pci in /sys/bus/pci/devices/0000:0*; do
+		echo ${PCI} >$pci/power/control
+	done
+	# snd-hda-intel powersave
+	[ -e /sys/module/snd_hda_intel/parameters/power_save ] &&
+	echo ${HDA} >/sys/module/snd_hda_intel/parameters/power_save
+	# Turn off NMI watchdog
+	[ -e /proc/sys/kernel/nmi_watchdog ] &&
+	echo ${NMI} >/proc/sys/kernel/nmi_watchdog
+	# VM write back timeout
+	[ -e /proc/sys/vm/dirty_writeback_centisecs ] &&
+	echo ${VMW} >/proc/sys/vm/dirty_writeback_centisecs
+
+
+	[ "${PROFILE_POWER}" = "network" ] || return
+	local iface running
+	for iface in $(ifconfig | sed -nre 's/(^[ew].*[0-9]{1}):.*/\1/p'); do
+		running="$(ifconfig $iface | sed -nre /$iface/'s/.*(RUNNING).*/\1/p')"
+		[ -n "$running" ] || ifconfig "$iface" down
+	done
+}
+start_test()
+{
+	local state="$(cat /sys/class/power_supply/A*/online 2>${NULL})"
+	case "${state}" in
+		(0) echo "bat";;
+		(*) echo "adp";;
+	esac
+}
+
+start_adp()
+{
+	start
+	xbl
+	hprofile disk.adp
+}
+start_bat()
+{
+	start "powersave" "auto" "auto" "min_power" "1" "0" "1500" "powersave"
+	xbl 10 200 200 300
+	hprofile disk.bat
+}
+start_dyn()
+{
+	start "performance" "on" "on" "mix_power" "0" "1" "500" "performance"
+	xbl 30 400 500 600
+	hprofile disk.dyn
+}
+start_med()
+{
+	start "performance" "on" "on" "min_power" "0" "1" "500" "performance"
+	xbl 15 150 200 300
+	hprofile disk.adp
+}
+start_quiet()
+{
+	start "powersave" "auto" "auto" "min_power" "1" "0" "2500" "powersave"
+	xbl 15 150 200 300
+	hprofile disk.quiet
+}
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#

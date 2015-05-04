@@ -1,0 +1,70 @@
+#
+# disk-functions
+#
+
+PROFILES='bat adp dyn quiet'
+DEFAULT=adp
+
+ata()
+{
+	echo /sys/devices/pci*/*/ata*/host*/target*/*/block/*sd[a-z]
+}
+usb()
+{
+	local dev
+	for dev in /sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*sd[a-z]; do
+		case "$(cat ${dev}/removable)" in
+			(1) echo noop >${dev}/queue/scheduler;;
+			(0) echo cfq  >${dev}/queue/scheduler;;
+		esac
+	done
+}
+disk()
+{
+	usb
+	local dev
+	for dev in $(ata); do
+		hdparm -q -S${1:-120} -B${2:-230} -M${3:-254} ${dev} >${NULL} 2>&1
+	done
+}
+
+start_test()
+{
+	local state="$(cat /sys/class/power_supply/A*/online 2>${NULL})"
+	case "${state}" in
+		(0) echo "bat";;
+		(*) echo "adp";;
+	esac
+}
+
+start_post()
+{
+	local dev
+	for dev in $(ata); do
+    	echo cfq  >${dev}/queue/scheduler
+    	# NCQ opitmizations
+    	echo 31   >${dev}/queue/nr_requests
+    	echo 2    >${dev}/device/queue_depth
+	done
+}
+
+start_adp()
+{
+	disk
+}
+start_bat()
+{
+	disk 120 210 230
+}
+start_dyn()
+{
+	disk 180 254 254
+}
+start_quiet()
+{
+	disk 120 200 200
+}
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#

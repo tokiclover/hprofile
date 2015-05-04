@@ -1,0 +1,156 @@
+#
+# disk-functions
+#
+
+PROFILES='intel radeon nvidia nv nouveau fglrx'
+DEFAULT=intel
+
+xset()
+{
+	[ -n "${1}" ] || return 0
+	[ "$(eselect opengl show)" != "${1}" ] && eselect opengl set "${1}"
+	[ -n "${2}" ] || return 0
+	[ "$(eselect xvmc   show)" != "${2}" ] && eselect xvmc   set "${2}"
+}
+
+post()
+{
+	[ -x /etc/init.d/consolefont ] &&
+	/etc/init.d/consolefont restart
+}
+start_post()
+{
+	post
+}
+stop_post()
+{
+	post
+}
+
+start_test()
+{
+	local switch=/sys/kernel/debug/vgaswitcheroo/switch
+	local drv
+	if [  ! -e ${switch} ]; then
+		grep -q i915	/proc/modules || modprobe i915	  >${NULL} 2>&1
+		grep -q radeon  /proc/modules || modprobe radeon  >${NULL} 2>&1
+		grep -q nouveau /proc/modules || modprobe nouveau >${NULL} 2>&1
+	fi
+	drv="$(lspci -k | sed -nre 's/.*Kernel driver in use: ((i915|fglrx|radeon|nouveau|nvidia))/\1/p')"
+	[ "${drv}" = "i915" ] && drv=intel
+	echo "${drv}"
+}
+start_post()
+{
+	local dev
+	for dev in $(ata); do
+    	echo cfq  >${dev}/queue/scheduler
+    	# NCQ opitmizations
+    	echo 31   >${dev}/queue/nr_requests
+    	echo 2    >${dev}/device/queue_depth
+	done
+}
+
+start_fglrx()
+{
+	modprobe uvesafb >${NULL} 2>&1
+	modprobe ${1} >${NULL} 2>&1 ||
+	{ error "Failed to insert ${1} kernel module"; return 1; }
+}
+stop_fglrx()
+{
+	rmmod ${1} >${NULL} 2>&1 ||
+	{ error "Failed to remove ${1} kernel module"; return 1; }
+	rmmod uvesafb >${NULL} 2>&1
+}
+
+start_nvidia()
+{
+	modprobe uvesafb >${NULL} 2>&1
+	modprobe ${1} >${NULL} 2>&1 ||
+	{ error "Failed to insert ${1} kernel module"; return 1; }
+}
+stop_nvidia()
+{
+	rmmod ${1} >${NULL} 2>&1 ||
+	{ error "Failed to remove ${1} kernel module"; return 1; }
+	rmmod uvesafb >${NULL} 2>&1
+}
+
+start_nv()
+{
+	:;
+}
+
+start_intel()
+{
+	modprobe i915 >${NULL} 2>&1 ||
+	{ error "Failed to insert i915 kernel module"; return 1; }
+	if [ -e /sys/kernel/debug/vgaswitcheroo/switch ]; then
+		echo IGD >/sys/kernel/debug/vgaswitcheroo/switch &&
+		echo OFF >/sys/kernel/debug/vgaswitcheroo/switch
+	fi
+	xset "xorg-x11" "intel-i915/i965"
+}
+
+start_radeon()
+{
+	modprobe ${1} >${NULL} 2>&1 ||
+	{ error "Failed to insert ${1} kernel module"; return 1; }
+	if [ -e /sys/kernel/debug/vgaswitcheroo/switch ]; then
+		echo DIS >/sys/kernel/debug/vgaswitcheroo/switch
+	#	echo OFF >/sys/kernel/debug/vgaswitcheroo/switch
+	fi
+	echo low >/sys/class/drm/card0/device/power_profile
+	xset "xorg-x11" "xorg-x11"
+	echo profile >/sys/class/drm/card0/power_method  # or 'dynpm'
+	echo    auto >/sys/class/drm/card0/power_profile # or 'low|mid'
+}
+#
+# FIXME: Comment in & edit if necessary to unload
+#        radeon/drm/kms/ttm i.e. to be able to load Fglrx.
+#
+stop_radeon()
+{
+	[ -e sys/kernel/debug/vgaswitcheroo/switch ] || return 0
+	#	echo 0 >/sys/class/vtconsole/vtcon1/bind
+	if ! rmmod radeon; then
+		error "Failed to remove ${1} module"
+	else
+		:;
+	#	rmmod ttm
+	#	rmmod drm_kms_helper
+	#	rmmod dri
+	fi
+}
+
+start_nouveau()
+{
+	modprobe ${1} >${NULL} 2>&1 ||
+	{ error "Failed to insert ${1} kernel module"; return 1; }
+	if [ -e /sys/kernel/debug/vgaswitcheroo/switch ]; then
+		echo DIS >/sys/kernel/debug/vgaswitcheroo/switch
+	#	echo OFF >/sys/kernel/debug/vgaswitcheroo/switch
+	fi
+	xset "xorg-x11" "xorg-x11"
+}
+#
+# FIXME: Comment out & edit if necessary to unload
+#        nouveau/drm/kms/ttm i.e. to be able to load nVidia.
+#
+stop_nouveau()
+{
+	[ -e sys/kernel/debug/vgaswitcheroo/switch ] || return 0
+	echo 0 >/sys/class/vtconsole/vtcon1/bind
+	if ! rmmod nouveau; then
+		error "Failed to remove ${1} kernel module"
+	else
+		rmmod ttm
+		rmmod drm_kms_helper
+		rmmod dri
+	fi
+}
+
+#
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
+#
