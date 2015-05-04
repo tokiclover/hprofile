@@ -1,4 +1,4 @@
-#!/bin/zsh
+#!/bin/sh
 #
 # Header: hprofile
 # Aythor:
@@ -7,48 +7,123 @@
 # License: GPL-2
 #
 
-setopt EXTENDED_GLOB NULL_GLOB
-unsetopt KSH_ARRAYS
-
-declare -A PKG
-PKG=(
-	name    hprofile
-	version 4.2.0
-	confdir /etc/hprofile
-	logfile /var/log/hprofile.log
-)
-
-if [[ -f "${PKG[confdir]}/${PKG[name]}.conf" ]]; then
-	declare -A HPROFILE
-	source "${PKG[confdir]}/${PKG[name]}.conf"
+if [ -n "${ZSH_VERSION}" ]; then
+	emulate sh
+	setopt SH_WORD_SPLIT
+	setopt EXTENDED_GLOB NULL_GLOB
+	disable -r end
+elif [ -n "${BASH_VERSION}" ]; then
+	shopt -qs nullglob
+	shopt -qs extglob
 fi
 
-function error {
-	if (( ${+HPROFILE[logfile]} )); then
-		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
-	else
-		print -P " %B%F{red}*%b %1x: %F{yellow}%U%I%u%f: $argv" >&2
-	fi
+PKG=hprofile
+VERSION=5.0.0
+CONFDIR=/etc/hprofile
+NULL=/dev/null
+name=${PKG}
+
+if [ -f "${CONFDIR}/${PKG}.conf" ]; then
+	source "${CONFDIR}/${PKG}.conf"
+fi
+
+#
+# @FUNCTION: Print error message to stderr
+#
+error()
+{
+	local prefix=${name:+" ${CLR_MAG}${name}:${CLR_RST}"}
+	echo -e${eol+n} "${eol+\n} ${CLR_RED}*${CLR_RST}${prefix} ${@}" >&2
 }
 
-function die {
-	local ret=$?
-	error "$@"
-	return $ret
+#
+# @FUNCTION: Print error message to stderr & exit
+#
+die()
+{
+	local ret=${?}; error "${@}"; exit ${ret}
 }
 
-function info {
-	if (( ${+HPROFILE[logfile]} )); then
-		echo "$(date '+%Y-%m-%d-%T') ${PKG[name]}: ${@}" >>"${HPROFILE[logfile]}"
-	else
-		print -P " %B%F{green}*%b%f %1x: $argv"
-	fi
+#
+# @FUNCTION: Print info message to stdout
+#
+info()
+{
+	local prefix=${name:+" ${CLR_YLW}${name}:${CLR_RST}"}
+	echo -e${eol+n} "${eol+\n} ${CLR_BLU}*${CLR_RST}${prefix} ${@}"
 }
 
-function usage {
+#
+# @FUNCTION: Print warn message to stdout
+#
+warn()
+{
+	local prefix=${name:+" ${CLR_RED}${name}:${CLR_RST}"}
+	echo -e${eol+n} "${eol+\n} ${CLR_YLW}*${CLR_RST}${prefix} ${@}"
+}
+
+#
+# @FUNCTION: Print begin message to stdout
+#
+begin()
+{
+	[ -n "${eol}" ] && echo
+:	${eol=0}
+	local prefix=${name:+"${CLR_MAG}[${CLR_RST} ${CLR_BLU}${name}${CLR_RST}: ${CLR_MAG}]${CLR_RST}"}
+	echo -en " ${prefix} ${@}"
+}
+
+#
+# @FUNCTION: Print end message to stdout
+#
+end()
+{
+	local suffix
+	case "${1-0}" in
+		(0) suffix="${CLR_BLU}[${CLR_RST} ${CLR_GRN}Ok${CLR_RST} ${CLR_BLU}]${CLR_RST}";;
+		(*) suffix="${CLR_YLW}[${CLR_RST} ${CLR_RED}No${CLR_RST} ${CLR_YLW}]${CLR_RST}";;
+	esac
+	shift
+	echo -en " ${@} ${suffix}\n"
+	eol=
+}
+
+yesno()
+{
+	case "${1:-NO}" in
+	(0|[Dd][Ii][Ss][Aa][Bb][Ll][Ee]|[Oo][Ff][Ff]|[Ff][Aa][Ll][Ss][Ee]|[Nn][Oo])
+		return 1;;
+	(1|[Ee][Nn][Aa][Bb][Ll][Ee]|[Oo][Nn]|[Tt][Rr][Uu][Ee]|[Yy][Ee][Ss])
+		return 0;;
+	(*)
+		return 2;;
+	esac
+}
+
+#
+# @FUNCTION: Colors handler
+#
+eval_colors()
+{
+	local BLD ESC FGD clr
+	BLD='1;' ESC='\e[' FGD='3'
+
+	for clr in 0:BLK 1:RED 2:GRN 3:YLW 4:BLU 5:MAG 6:CYN 7:WHT; do
+		eval CLR_${clr#*:}="'${ESC}${BLD}${FGD}${clr%:*}m'"
+	done
+	CLR_RST="${ESC}0m"
+}
+
+if [ -t 1 ] && yesno "${COLOR:-Yes}"; then
+	eval_colors
+fi
+
+usage()
+{
 	cat <<-EOH
-  usage: ${PKG[name]} [options] <type>[.<profile>]
+  usage: ${PKG} [options] <type>[.<profile>]
 
+    -d, --debug              Enable debug mode
     -t, --type               Print all known profiles types
     -c, --current=<type>     Print the current profile <type>
     -p, --profile=<type>     Print the profile that would be used
@@ -63,245 +138,256 @@ function usage {
   <type>                     Switch to the currently valid <type> profile
   <type>.<profile>           Switch to the given <type>.<profile> profile
 EOH
-exit ${1:-?}
+${1:+exit ${1}}
 }
 
-function version {
-	print -P "%B%F{blue}${PKG[name]} %F{white}version %F{magenta}${PKG[version]}%f%b"
+version()
+{
+	echo -e "${CLR_BLU}${PKG}${CLR_RST} version ${CLR_MAG}${VERSION}${CLR_RST}"
 	exit
 }
 
-# @DESCRIPTION: Verify validity of a profile type
-# @ARGUMENTS: <type>
-function verify-profile {
-	test "${#}" -eq 1 -a -n "${1}" -a "${1}" != "--" ||
-		die "Invalid profile type ${1}"
-	test -n "${dir}" -a -d "${dir}" || local dir="${PROFILE[dir]}/profiles/${1}"
+#
+# @FUNCTION: Validity verification of a profile type
+# @ARGS: <type>
+#
+verify_profile()
+{
+	[ "${#}" = 1  ] && [ -n "${1}"   ] || die "Invalid profile type ${1}"
+	[ -n "${dir}" ] && [ -d "${dir}" ] || local dir="${DIR}/profiles/${1}"
 
-	test -e "${dir}/ptest"   -o -f "${dir}/profiles" -o \
-		 -f "${dir}"/default -o -e "${dir}"/pre-start -o \
-		 -e "${dir}"/post-start || die "Invalid profile type ${2}"
+	[ -e "${dir}/ptest"   ] || [ -f "${dir}/profiles"  ] ||
+	[ -f "${dir}"/default ] || [ -e "${dir}"/start_pre ] ||
+	[ -e "${dir}"/start_post ] || die "Invalid profile type ${2}"
 }
 
-# @DESCRIPTION: Print the profile to be used. This will call hpdet if no profile
-# was specified or invalid if not.
-# @Arguments: <type> <profile>
-function get-profile {
-	local dir="${PROFILE[dir]}/profiles/${1}" name="${2}"
+#
+# @FUNCTION: Print the profile to be used
+# @ARGS: <type> <profile>
+#
+get_profile()
+{
+	local dir="${DIR}/profiles/${1}" name="${2}"
 
-	test -z "${name}" -a -s "${dir}/ptest"   && name=$(run-script "${dir}/ptest")
-	test -z "${name}" -a -s "${dir}/default" && name=$(< "${dir}/default")
+	[ -z "${name}" ] && [ -s "${dir}/ptest"   ] && name=$(run_script "${dir}/ptest")
+	[ -z "${name}" ] && [ -s "${dir}/default" ] && name=$(cat "${dir}/default")
 
-	test -z "${name}" -a -s "${profiles}" &&
+	[ -z "${name}" ] && [ -s "${profiles}" ] &&
 		name=$(sed -nre '0,/^[a-zA-Z].*/p' "${profiles}")
 
 	echo "${name}"
 }
 
-# @DESCRIPTION: Print the currently selected profile
-# @ARGUMENTS: <type>
-function current-profile {
-	local file="${PROFILE[dir]}/profiles/${1}/current"
-	[[ -s "${file}" ]] && echo $(< "${file}")
+#
+# @FUNCTION: Print the currently selected profile
+# @ARGS: <type>
+#
+current_profile()
+{
+	local file="${DIR}/profiles/${1}/current"
+	[ -s "${file}" ] && echo $(cat "${file}")
 }
 
-# @DESCRIPTION: run script passed as positional parameter 1
-# @ARGUMENTS: <script> <args>
-function run-script {
-	test "${#}" -ge 1 -a -s "${1}" || return
-	local func="${argv[1]}"
+#
+# @FUNCTION: run script passed as positional parameter 1
+# @ARGS: <script> <args>
+#
+run_script()
+{
+	[ "${#}" -ge 1 ] && [ -s "${1}" ] || return
+	local func="${1}"
 
-	local src zsh="${commands[zsh]}"
-	for src (${dir}/*[:alnum:]*.zsh(.N)); do
-		[[ -s "${src}" ]] || continue
-		eval "function \"${src:t}\" { \
-			source \"${src}\"; \
-		}"
+	local src tail
+	for src in ${dir}/*[:alnum:]*.sh; do
+		[ -s "${src}" ] || continue
+		tail="${src##*/}"
+		eval "${tail%.sh}() { source \"${src}\"; }"
 	done
 
 	shift
-	eval "function { \
-		source \"${func}\"; \
-	} ${argv}"
+	eval "script() { source \"${func}\"; }"
+	script "${@}"
 
 	return 0
 }
 
-# @DESCRIPTION: Stop the current profile of the given type
-# @ARGUMENTS: <inherited>|<type> <profile>
-function stop-profile {
-	[[ -n "${1}" ]] && local type="${1}" dir="${PROFILE[dir]}/profiles/${1}"
-	local current="$(current-profile)"
-	[[ -n "${current}" ]] && local profile="${current}" || return 0
+#
+# @FUNCTION: Stop the current profile of the given type
+# @ARGS: <inherited>|<type> <profile>
+#
+stop_profile()
+{
+	[ -n "${1}" ] && local type="${1}" dir="${DIR}/profiles/${1}"
+	local current="$(current_profile)"
+	[ -n "${current}" ] && local profile="${current}" || return 0
 
-	print -P "%BStoping %F{green}${type}.%F{yellow}${profile}%f profile%b"
+	echo -e "Stoping ${CLR_GRN}${type}.${CLR_YLW}${profile}${CLR_RST} profile"
 
-	if [[ -s "${dir}/stop" ]]; then
-		function stop {
-			source "${dir}/stop"
-		}
+	if [ -s "${dir}/stop" ]; then
+		stop() { source "${dir}/stop"; }
 	fi
-	for scr in pre-stop scripts/${profile}.stop post-stop; do
-		if [[ -s "${dir}/${scr}" ]]; then
-			run-script "${dir}/${scr}" "${profile}" ||
+	for scr in stop_pre scripts/${profile}.stop stop_post; do
+		if [ -s "${dir}/${scr}" ]; then
+			run_script "${dir}/${scr}" "${profile}" ||
 				die "Failed to run ${type}/${scr} script"
 		fi
 	done
-	echo              > "${PROFILE[dir]}/profiles/${type}/current"
-	echo "${profile}" > "${PROFILE[dir]}/profiles/${type}/previous"
+	echo              > "${DIR}/profiles/${type}/current"
+	echo "${profile}" > "${DIR}/profiles/${type}/previous"
 }
 
-# @DESCRIPTION: Revert to the previous profile of the given type
-# @ARGUMENTS: <type>
-function revert-profile {
-	local file="${PROFILE[dir]}/profiles/${1}/previous"
-	[[ -s "${file}" ]] && local previous=$(< "${file}") || return
-	[[ -n "${previous}" ]] && start-profile "${1}" "${previous}"
+#
+# @FUNCTION: Revert to the previous profile of the given type
+# @ARGS: <type>
+#
+revert_profile()
+{
+	local file="${DIR}/profiles/${1}/previous"
+	[ -s "${file}" ] && local previous=$(cat "${file}") || return
+	[ -n "${previous}" ] && start_profile "${1}" "${previous}"
 }
 
-# @DESCRIPTION: Print all known profile types
-function profile-type {
-	for dir ("${PROFILE[dir]}/profiles"/*(/N)); do
-		verify-profile "${dir}" && echo -n "${dir:t} "
+#
+# @FUNCTION: Print all known profile types
+#
+profile_type()
+{
+	for dir in "${DIR}/profiles"/*; do
+		verify_profile "${dir}" && echo -n "${dir##*/} "
 	done
 	echo
 	exit
 }
 
-# @DESCRIPTION: Print all valid profiles of the given type
-# @ARGUMENTS: <type>
-function profile-list {
-	local dir="${PROFILE[dir]}/profiles/${1}"
+#
+# @FUNCTION: Print all valid profiles of the given type
+# @ARGS: <type>
+#
+profile_list()
+{
+	local dir="${DIR}/profiles/${1}"
 
-	if [[ -s "${dir}/profiles" ]]; then
-		echo $(< "${dir}/profiles")
+	if [ -s "${dir}/profiles" ]; then
+		echo $(cat "${dir}/profiles")
 	else
-		for file ("${dir}"/scripts/*.start(.N)); do
-			echo "${${file:t}%.start}"
+		local tail
+		for file in "${dir}"/scripts/*.start; do
+			tail="${file##*/}"
+			echo "${file%.start}"
 		done
 	fi
 	exit
 }
 
-# @DESCRIPTION: Swap files with extension .<profile> in the appropriate profile
+#
+# @FUNCTION: Swap files with extension .<profile> in the appropriate profile
 # directory, and sym-link files appropriately.
-# @ARGUMENTS: <inherited>
-function swap-files {
+# @ARGS: <inherited>
+#
+swap_files()
+{
 	local filesdir="${dir}/files" src dest
 
-	for src (${filesdir}/**/*.${profile}(.N)); do
-		dest="${${src%.$profile}#$filesdir}"
-		if test -e "${dest}" -a ! -h "${dest}"; then
-			if ! diff "${dest}" "${src}" >/dev/null; then
-				mv -f "${dest}"{,.bak} || die "Failed to back up ${dest} file"
+	for src in $(find "${filesdir}" -name "*.${profile}"); do
+		dest="${src#${filesdir}}"
+		dest="${dest%.${profile}}"
+		if [ -e "${dest}" ] && [ ! -h "${dest}" ]; then
+			if ! diff "${dest}" "${src}" >${NULL}; then
+				mv -f "${dest}" "${dest}\~" || die "Failed to back up ${dest} file"
 			fi
 		fi
 		ln -fs "${src}" "${dest}" || die "Failed to restore ${src} to ${dest}"
 	done
 }
 
-# @DESCRIPTION: Apply profile
-# @ARGUMENTS: <type> <profile>
-function start-profile {
+#
+# @FUNCTION: Apply profile
+# @ARGS: <type> <profile>
+#
+start_profile()
+{
 	local type="${1}" profile="${2}"
-	local dir="${PROFILE[dir]}/profiles/${1}"
+	local dir="${DIR}/profiles/${1}"
 
-	print -P "%BStarting %F{green}${type}.%F{yellow}${profile}%f profile%b"
+	echo -e "Starting ${CLR_GRN}${type}.${CLR_YLW}${profile}${CLR_RST} profile"
 
 	# Stop profile
-	stop-profile
+	stop_profile
 	# Start profile
-	if [[ -s "${dir}/start" ]]; then
-		function start {
-			source "${dir}/start"
-		}
+	if [ -s "${dir}/start" ]; then
+		start() { source "${dir}/start"; }
 	fi
-	for scr in pre-start scripts/${profile}.start post-start; do
-		if [[ -s "${dir}/${scr}" ]]; then
-			run-script "${dir}/${scr}" "${profile}" ||
+	for scr in start_pre scripts/${profile}.start start_post; do
+		if [ -s "${dir}/${scr}" ]; then
+			run_script "${dir}/${scr}" "${profile}" ||
 				die "Failed to run ${type}/${scr} script"
 		fi
 	done
 	# Sym-link files if available
-	if [[ -d "${dir}/files" ]]; then
-		swap-files || die "Failed to swap ${type}.${profile} files"
+	if [ -d "${dir}/files" ]; then
+		swap_files || die "Failed to swap ${type}.${profile} files"
 	fi
 	# Save profile
-	echo "${profile}" >"${PROFILE[dir]}/profiles/${type}/current"
+	echo "${profile}" >"${DIR}/profiles/${type}/current"
 }
 
-[[ -n "${argv}" ]] || usage 2
+[ ${#} -ge 1 ] || usage 2
 
-declare -A PROFILE
-PROFILE[dir]="${PKG[confdir]}"
+DIR="${CONFDIR}"
 
-declare -a opt
-opt=(
-	"-n" "${PKG[name]}"
-	"-o" "?fhvtc:p:l:s:r:u:"
-	"-l" "force,help,version,profile:,type,current:,list:,stop:,revert,user:"
-)
-opt=($(getopt "${opt[@]}" -- "${argv[@]}" || usage))
-eval set -- "${opt[@]}"
+ARGS="$(getopt \
+	-l debug,force,help,version,profile:,type,current:,list:,stop:,revert,user: \
+	-o \?dfhvtc:p:l:s:r:u: -n ${PKG} -s sh -- "${@}")"
+[ ${?} = 0 ] || usage 1
+eval set -- "${ARGS}"
 
-while (( $# > 1 )); do
+while true; do
 	case "${1}" in
-		(-f|--force)
-			PROFILE[force]=
-			shift
-			;;
+		(-d|--debug) set -x ; shift;;
+		(-f|--force) FORCE=1; shift;;
 		('-?'|-h|--help) usage 0;;
 		(-v|--version) version;;
-		(-t|--type)	profile-type;;
+		(-t|--type)	profile_type;;
 		(-c|--current)
-			verify-profile "${2}"
-			current-profile "${2}"
-			exit
-			;;
+			verify_profile  "${2}"
+			current_profile "${2}"
+			exit;;
 		(-p|--profile)
-			verify-profile "${2}"
-			get-profile "${2}"
-			exit
-			;;
+			verify_profile "${2}"
+			get_profile    "${2}"
+			exit;;
 		(-l|--list)
-			verify-profile "${2}"
-			profile-list "${2}"
-			;;
+			verify_profile "${2}"
+			profile_list   "${2}";;
 		(-s|--stop)
-			verify-profile "${2}"
-			stop-profile "${2}" && exit || die "Could not stop ${2} profile"
+			verify_profile "${2}"
+			stop_profile "${2}" && exit || die "Could not stop ${2} profile"
 			;;
 		(-r|--revert)
-			verify-profile "${2}"
-			revert-profile "${2}"
-			exit ${?}
-			;;
-		(-u|--user) PROFILE[dir]="${HOME}/.${PKG[name]}";;
-		(--) shift;;
-		(*) usage 2;;
+			verify_profile "${2}"
+			revert_profile "${2}"
+			exit;;
+		(-u|--user) DIR="${HOME}/.${PKG}";;
+		(*) shift; break;;
 	esac
 done
 
-arg=(${=argv[1]/./ })
-PROFILE[name]="${arg[2]}"
-PROFILE[type]="${arg[1]}"
-unset arg
+set ${@/./ }
+NAME="${2}"
+TYPE="${1}"
 
-[[ -n "${PROFILE[type]}" ]] || die "Empty/null profile type"
-verify-profile "${PROFILE[type]}"
+[ -n "${TYPE}" ] || die "Empty/null profile type"
+verify_profile "${TYPE}"
 
-[[ -n "${PROFILE[name]}" ]] || PROFILE[name]=$(get-profile "${PROFILE[type]}")
-[[ -n "${PROFILE[name]}" ]] ||
-	die "Could not find ${PROFILE[name]} profile ${PROFILE[type]}"
+[ -n "${NAME}" ] || NAME=$(get_profile "${TYPE}")
+[ -n "${NAME}" ] || die "Could not find ${NAME} profile ${TYPE}"
 
-PROFILE[current]=$(current-profile "${PROFILE[type]}")
-if [[ "${PROFILE[name]}" == "${PROFILE[current]}" ]]; then
-	(( ${+PROFILE[force]} )) || return 0
+CURRENT=$(current_profile "${TYPE}")
+if [ "${NAME}" = "${CURRENT}" ]; then
+	[ -n "${FORCE}" ] || exit 0
 fi
-start-profile "${PROFILE[type]}" "${PROFILE[name]}"
-
-unset HPROFILE PKG PROFILE
+start_profile "${TYPE}" "${NAME}"
 
 #
-# vim:fenc=utf-8:ft=zsh:ci:pi:sts=0:sw=4:ts=4:
+# vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
 #
