@@ -1,3 +1,8 @@
+5.0.0:
+
+Converted the utility to plain POSIX shell script; and added
+a set of better info helpers {info,error,warn,begin,end,yesno}.
+
 4.2/3.2:
 
 Added man page section 1.
