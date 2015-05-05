@@ -327,6 +327,7 @@ while true; do
 done
 
 set ${@/./ }
+PROFILEDIR="${DIR}"
 NAME="${2}"
 TYPE="${1}"
 
