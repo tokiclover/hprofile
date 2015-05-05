@@ -122,8 +122,16 @@ with the extension `.<profile>' are symlinked to the file system (minus the
 .B CONFDIR=/etc/hprofile
 System wide profile directory
 .TP
-.B DIR=CONFDIR|HOME/.hprofile
+.B [PROFILE]DIR=CONFDIR|HOME/.hprofile
 Environment variable holding the current profile directory
+.TP
+.B PROFILE=DIR/<PROFILE>-functions
+Environment variable holding the current profile file
+.TP
+.B TYPE
+Enviroment variable holding the (parent) profile type
+.B NAME[|(ARG-)1]
+Enviroment variable holding the (child) profile name
 .TP
 .B RUNDIR=/var/run
 Run-time directory (for <profile>-{current,previous} files)
@@ -147,11 +155,6 @@ Probe the actual power profile
 .BR /etc/{conf,init}.d/hprofile
 .B hprofile
 init service script along with its configuration file.
-.TP
-.BR /etc/hprofile/hprofile.conf
-Main
-.B hprofile
-configuration file.
 .TP
 .BR /etc/hprofile/PROFILES
 .TP
