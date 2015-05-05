@@ -1,5 +1,5 @@
 #
-# $Header: hprofile.confd,v 2014/09/20 13:05:23 -tclover Exp $
+# $Header: /etc/conf.d/hprofile,v 1.4 2015/05/05         Exp $
 #
 # This variable is a list of profiles to start when starting the service
 #
