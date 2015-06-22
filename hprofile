@@ -197,7 +197,7 @@ run_cmd()
 stop_profile()
 {
 	local cmd ret p c
-	c="${CURRENT:-$(current_profile)}"
+	c="${CURRENT:-$(current_profile ${1})}"
 	[ -n "${c}" ] && p="${c}" || return 0
 
 	begin "Stoping ${CLR_GRN}${1}.${CLR_YLW}${p}${CLR_RST} profile"
@@ -327,7 +327,6 @@ while true; do
 done
 
 set ${@/./ }
-PROFILEDIR="${DIR}"
 NAME="${2}"
 TYPE="${1}"
 
