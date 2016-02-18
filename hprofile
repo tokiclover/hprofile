@@ -321,7 +321,7 @@ while true; do
 			verify_profile "${2}"
 			revert_profile "${2}"
 			exit;;
-		(-u|--user) DIR="${HOME}/.${PKG}";;
+		(-u|--user) DIR="${HOME}/.${PKG}"; shift;;
 		(*) shift; break;;
 	esac
 done
