@@ -102,7 +102,7 @@ start_radeon()
 #
 stop_radeon()
 {
-	[ -e sys/kernel/debug/vgaswitcheroo/switch ] || return 0
+	[ -e sys/kernel/debug/vgaswitcheroo/switch ] && return 0
 	#	echo 0 >/sys/class/vtconsole/vtcon1/bind
 	if ! rmmod radeon; then
 		error "Failed to remove ${1} module"
@@ -130,7 +130,7 @@ start_nouveau()
 #
 stop_nouveau()
 {
-	[ -e sys/kernel/debug/vgaswitcheroo/switch ] || return 0
+	[ -e sys/kernel/debug/vgaswitcheroo/switch ] && return 0
 	echo 0 >/sys/class/vtconsole/vtcon1/bind
 	if ! rmmod nouveau; then
 		error "Failed to remove ${1} kernel module"
