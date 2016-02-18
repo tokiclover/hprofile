@@ -18,9 +18,9 @@ elif [ -n "${BASH_VERSION}" ]; then
 fi
 
 PKG=hprofile
-VERSION=6.0.0
+VERSION=6.0.2
 CONFDIR=/etc/${PKG}
-RUNDIR=/var/run
+RUNDIR="${TMPDIR:-/tmp}"
 NULL=/dev/null
 name=${PKG}
 
@@ -172,7 +172,7 @@ get_profile()
 #
 current_profile()
 {
-	local file="${RUNDIR}/${1}-current"
+	local file="${RUNDIR}/${PKG}:${1}-current"
 	[ -s "${file}" ] && echo $(cat "${file}")
 }
 
@@ -210,8 +210,8 @@ stop_profile()
 	done
 	end ${ret}
 	[ ${ret:-0} = 0 ] || return ${ret}
-	echo        > "${RUNDIR}/${1}-current"
-	echo "${p}" > "${RUNDIR}/${1}-previous"
+	echo        > "${RUNDIR}/${PKG}:${1}-current"
+	echo "${p}" > "${RUNDIR}/${PKG}:${1}-previous"
 }
 
 #
@@ -220,7 +220,7 @@ stop_profile()
 #
 revert_profile()
 {
-	local file="${RUNDIR}/${1}-previous" p
+	local file="${RUNDIR}/${PKG}:${1}-previous" p
 	[ -s "${file}" ] && p=$(cat "${file}") || return
 	[ -n "${p}" ] && start_profile "${1}" "${p}"
 }
@@ -278,7 +278,7 @@ start_profile()
 	done
 	end ${ret}
 	# Save profile
-	[ ${ret:-0} = 0 ] && echo "${2}" >"${RUNDIR}/${1}-current" || return ${ret}
+	[ ${ret:-0} = 0 ] && echo "${2}" >"${RUNDIR}/${PKG}:${1}-current" || return ${ret}
 	# Sym-link files if available
 	if [ -d "${DIR}/${1}" ]; then
 		swap_files "${1}" "${2}" || error "Failed to swap ${1}.${2} files"
