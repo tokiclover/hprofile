@@ -22,8 +22,8 @@ dist_EXTRA  = \
 	README.md \
 	ChangeLog
 dist_ACPI   = \
-	actions/power \
-	events/power
+	actions/power-profile.sh \
+	events/power-profile
 dist_PROFILE_vga    = \
 	 etc/X11/xorg.conf.d/40-monitor.conf.fglrx \
 	 etc/X11/xorg.conf.d/40-monitor.conf.intel \
@@ -55,8 +55,8 @@ install: install-dir $(DISTFILES)
 	$(install_SCRIPT) $(PACKAGE).initd $(DESTDIR)$(svcinitdir)/$(PACKAGE)
 	$(install_DATA)   $(PACKAGE).confd $(DESTDIR)$(svcconfdir)/$(PACKAGE)
 	$(install_DATA)   $(PACKAGE).1     $(DESTDIR)$(mandir)/man1
-	$(install_SCRIPT) acpi/actions/power $(DESTDIR)$(sysconfdir)/acpi/actions/power
-	$(install_DATA)   acpi/events/power  $(DESTDIR)$(sysconfdir)/acpi/events/power
+	$(install_SCRIPT) acpi/actions/power-profile.sh $(DESTDIR)$(sysconfdir)/acpi/actions
+	$(install_DATA)   acpi/events/power-profile  $(DESTDIR)$(sysconfdir)/acpi/events
 	$(install_DATA) -D hp.vim $(DESTDIR)$(datadir)/vim/vimfiles/syntax/hp.vim
 $(dist_EXTRA): .FORCE
 	$(install_DATA) $@ $(DESTDIR)$(docdir)/$(PACKAGE)-$(VERSION)/$@

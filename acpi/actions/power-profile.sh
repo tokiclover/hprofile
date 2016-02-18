@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Header: /etc/acpi/actions/power                       Exp $
+# $Header: /etc/acpi/actions/power-profile.sh            Exp $
 #
 
 set $*

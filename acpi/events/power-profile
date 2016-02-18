@@ -1,0 +1,15 @@
+#
+# $Header: /etc/acpi/events/power-profile                Exp $
+#
+
+# Take care of battery events
+event=battery.*
+action=/etc/acpi/action/power-profile.sh %e
+
+# Take care of ac_adapter events
+event=ac_adapter.*
+action=/etc/acpi/action/power-profile.sh %e
+
+#
+# vim:fenc=utf-8::ci:pi:sts=0:sw=4:ts=4:
+#
