@@ -289,7 +289,6 @@ swap_files()
 start_profile()
 {
 	local cmd ret
-	# Start profile
 	begin "Starting ${1}.${2} profile"
 	for cmd in start_pre start_${2} start_post; do
 		run_cmd "${cmd}" "${2}"
@@ -325,8 +324,8 @@ profile()
 		yesno "${PROFILE_FORCE:-0}" || exit 0
 	fi
 
-	 stop_profile "${1}" "${2}"
-	start_profile "${1}" "${2}"
+	 stop_profile "${PROFILE_TYPE}" "${PROFILE_NAME}"
+	start_profile "${PROFILE_TYPE}" "${PROFILE_NAME}"
 }
 
 [ ${#} -ge 1 ] || help_message 2
