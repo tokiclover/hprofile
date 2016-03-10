@@ -3,7 +3,7 @@
 # Header: hprofile
 # Aythor:
 # 	Copyright (c) 2003-2004 Martin Aspeli <optilude@gmx/net>
-# 	Copyright (c) 2014-2015 -tclover <tokiclover@gmail.com>
+# 	Copyright (c) 2014-2016 -tclover <tokiclover@gmail.com>
 # License: GPL-2
 #
 
@@ -17,20 +17,35 @@ elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs extglob
 fi
 
-PKG=hprofile
-VERSION=6.0.2
-CONFDIR=/etc/${PKG}
-RUNDIR="${TMPDIR:-/tmp}"
+PACKAGE=hprofile
+VERSION=6.1.0
+:	${CONFDIR:=/etc/${PACKAGE}}
+:	${RUNDIR:=${TMPDIR:-/tmp}}
 NULL=/dev/null
-name=${PKG}
+PROFILE_DIR="${CONFDIR}"
+name="${PACKAGE}"
+
+trap 'PRINT_COL="$(tput cols)"' WINCH
+if command -v printf &>NULL; then
+	PRINTF()
+	{
+		printf "%*b\n" "${PRINT_LEN}" "${*}"
+	}
+else
+	PRINTF()
+	{
+		echo -e "${*}"
+	}
+fi
+PRINT_COL="$(tput cols)"
 
 #
 # @FUNCTION: Print error message to stderr
 #
 error()
 {
-	local prefix=${name:+" ${CLR_MAG}${name}:${CLR_RST}"}
-	echo -e${eol+n} "${eol+\n} ${CLR_RED}*${CLR_RST}${prefix} ${@}" >&2
+	local PFX="${name:+${CLR_MAG}${name}:${CLR_RST}}"
+	echo -e "${PRINT_EOL}${CLR_RED}*${CLR_RST} ${PFX} ${@}" >&2
 }
 
 #
@@ -46,8 +61,8 @@ die()
 #
 info()
 {
-	local prefix=${name:+" ${CLR_YLW}${name}:${CLR_RST}"}
-	echo -e${eol+n} "${eol+\n} ${CLR_BLU}*${CLR_RST}${prefix} ${@}"
+	local PFX="${name:+${CLR_YLW}${name}:${CLR_RST}}"
+	echo -e "${PRINT_EOL}${CLR_BLU}*${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -55,8 +70,8 @@ info()
 #
 warn()
 {
-	local prefix=${name:+" ${CLR_RED}${name}:${CLR_RST}"}
-	echo -e${eol+n} "${eol+\n} ${CLR_YLW}*${CLR_RST}${prefix} ${@}"
+	local PFX="${name:+${CLR_RED}${name}:${CLR_RST}}"
+	echo -e "${PRINT_EOL}${CLR_YLW}*${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -64,10 +79,11 @@ warn()
 #
 begin()
 {
-	[ -n "${eol}" ] && echo
-:	${eol=0}
-	local prefix=${name:+"${CLR_MAG}[${CLR_RST} ${CLR_BLU}${name}${CLR_RST}: ${CLR_MAG}]${CLR_RST}"}
-	echo -en " ${prefix} ${@}"
+	echo -en "${PRINT_EOL}"
+	PRINT_EOL="\n"
+	PRINT_LEN=$((${#name}+3+${#*}))
+	local PFX="${name:+${CLR_MAG}[${CLR_BLU}${name}${CLR_MAG}]${CLR_RST}}"
+	echo -en "${PFX} ${@}"
 }
 
 #
@@ -77,14 +93,23 @@ end()
 {
 	local suffix
 	case "${1-0}" in
-		(0) suffix="${CLR_BLU}[${CLR_RST} ${CLR_GRN}Ok${CLR_RST} ${CLR_BLU}]${CLR_RST}";;
-		(*) suffix="${CLR_YLW}[${CLR_RST} ${CLR_RED}No${CLR_RST} ${CLR_YLW}]${CLR_RST}";;
+		(0) suffix="${CLR_BLU}[${CLR_GRN}Ok${CLR_BLU}]${CLR_RST}";;
+		(*) suffix="${CLR_YLW}[${CLR_RED}No${CLR_YLW}]${CLR_RST}";;
 	esac
 	shift
-	echo -en " ${@} ${suffix}\n"
-	eol=
+	if [ -n "${PRINT_EOL}" ]; then
+		PRINT_LEN=$((${PRINT_COL}-${PRINT_LEN}))
+	else
+		PRINT_LEN="${PRINT_COL}"
+	fi
+	PRINTF "${@} ${suffix}"
+	PRINT_EOL=
+	PRINT_LEN=0
 }
 
+#
+# @FUNCTION: YES or NO helper
+#
 yesno()
 {
 	case "${1:-NO}" in
@@ -97,7 +122,6 @@ yesno()
 	esac
 }
 
-#
 # @FUNCTION: Colors handler
 #
 eval_colors()
@@ -111,14 +135,15 @@ eval_colors()
 	CLR_RST="${ESC}0m"
 }
 
-if [ -t 1 ] && yesno "${COLOR:-Yes}"; then
+if [ -t 1 ] && yesno "${PRINT_COLOR:-Yes}"; then
 	eval_colors
 fi
 
-usage()
+
+help_message()
 {
 	cat <<-EOH
-  usage: ${PKG} [options] <type>[.<profile>]
+  usage: ${PACKAGE} [options] <type>[.<profile>]
 
     -d, --debug              Enable debug mode
     -t, --type               Print all known profiles types
@@ -138,9 +163,9 @@ EOH
 ${1:+exit ${1}}
 }
 
-version()
+version_message()
 {
-	echo -e "${CLR_BLU}${PKG}${CLR_RST} version ${CLR_MAG}${VERSION}${CLR_RST}"
+	echo -e "${CLR_BLU}${PACKAGE}${CLR_RST} version ${CLR_MAG}${VERSION}${CLR_RST}"
 	exit
 }
 
@@ -151,9 +176,8 @@ version()
 verify_profile()
 {
 	[ "${#}" = 1  ] && [ -n "${1}"   ] || die "Invalid profile type ${1}"
-	[ -n "${PROFILE}" -a -f "${PROFILE}" ] && return
-	PROFILE="${DIR}/${1}-functions"
-	[ -f "${PROFILE}" ] && source "${PROFILE}"
+	PROFILE_FILE="${PROFILE_DIR}/${1}-functions"
+	[ -f "${PROFILE_FILE}" ] && source "${PROFILE_FILE}"
 }
 
 #
@@ -172,7 +196,7 @@ get_profile()
 #
 current_profile()
 {
-	local file="${RUNDIR}/${PKG}:${1}-current"
+	local file="${RUNDIR}/${PACKAGE}:${1}-current"
 	[ -s "${file}" ] && echo $(cat "${file}")
 }
 
@@ -197,10 +221,10 @@ run_cmd()
 stop_profile()
 {
 	local cmd ret p c
-	c="${CURRENT:-$(current_profile ${1})}"
+	c="${PROFILE_CURRENT:-$(current_profile ${1})}"
 	[ -n "${c}" ] && p="${c}" || return 0
 
-	begin "Stoping ${CLR_GRN}${1}.${CLR_YLW}${p}${CLR_RST} profile"
+	begin "Stoping ${1}.${p} profile"
 	for cmd in stop_pre stop_${p} stop_post; do
 		run_cmd "${cmd}" "${p}"
 		case ${?} in
@@ -210,8 +234,8 @@ stop_profile()
 	done
 	end ${ret}
 	[ ${ret:-0} = 0 ] || return ${ret}
-	echo        > "${RUNDIR}/${PKG}:${1}-current"
-	echo "${p}" > "${RUNDIR}/${PKG}:${1}-previous"
+	echo        > "${RUNDIR}/${PACKAGE}:${1}-current"
+	echo "${p}" > "${RUNDIR}/${PACKAGE}:${1}-previous"
 }
 
 #
@@ -220,7 +244,7 @@ stop_profile()
 #
 revert_profile()
 {
-	local file="${RUNDIR}/${PKG}:${1}-previous" p
+	local file="${RUNDIR}/${PACKAGE}:${1}-previous" p
 	[ -s "${file}" ] && p=$(cat "${file}") || return
 	[ -n "${p}" ] && start_profile "${1}" "${p}"
 }
@@ -231,7 +255,7 @@ revert_profile()
 profile_type()
 {
 	local f t
-	for f in "${DIR}"/*-functions; do
+	for f in "${PROFILE_DIR}"/*-functions; do
 		t="${f##*/}"; echo -n "${t%-*} "
 	done
 	echo
@@ -246,8 +270,8 @@ profile_type()
 swap_files()
 {
 	local src dest
-	for src in $(find "${DIR}/${1}" -name "*.${2}"); do
-		dest="${src#${DIR}/${1}}"; dest="${dest%.${2}}"
+	for src in $(find "${PROFILE_DIR}/${1}" -name "*.${2}"); do
+		dest="${src#${PROFILE_DIR}/${1}}"; dest="${dest%.${2}}"
 		if [ -e "${dest}" ] && [ ! -h "${dest}" ]; then
 			if ! diff "${dest}" "${src}" >${NULL}; then
 				mv -f "${dest}" "${dest}\~" ||
@@ -265,10 +289,8 @@ swap_files()
 start_profile()
 {
 	local cmd ret
-	# Stop profile
-	stop_profile "${1}"
 	# Start profile
-	begin "Starting ${CLR_GRN}${1}.${CLR_YLW}${2}${CLR_RST} profile"
+	begin "Starting ${1}.${2} profile"
 	for cmd in start_pre start_${2} start_post; do
 		run_cmd "${cmd}" "${2}"
 		case ${?} in
@@ -278,29 +300,48 @@ start_profile()
 	done
 	end ${ret}
 	# Save profile
-	[ ${ret:-0} = 0 ] && echo "${2}" >"${RUNDIR}/${PKG}:${1}-current" || return ${ret}
+	[ ${ret:-0} = 0 ] && echo "${2}" >"${RUNDIR}/${PACKAGE}:${1}-current" || return ${ret}
 	# Sym-link files if available
-	if [ -d "${DIR}/${1}" ]; then
+	if [ -d "${PROFILE_DIR}/${1}" ]; then
 		swap_files "${1}" "${2}" || error "Failed to swap ${1}.${2} files"
 	fi
 }
 
-[ ${#} -ge 1 ] || usage 2
 
-DIR="${CONFDIR}"
+profile()
+{
+	local PROFILE_CURRENT PROFILE_FILE PROFILE_NAME PROFILE_TYPE
+	set ${@/./ }
+	PROFILE_NAME="${2}"
+	PROFILE_TYPE="${1}"
 
+	[ -n "${PROFILE_TYPE}" ] || die "Empty/null profile type"
+	verify_profile "${PROFILE_TYPE}" || die "Invalid profile type"
+	[ -n "${PROFILE_NAME}" ] || PROFILE_NAME=$(get_profile "${PROFILE_TYPE}")
+	[ -n "${PROFILE_NAME}" ] || die "Could not find ${PROFILE_NAME} profile ${PROFILE_TYPE}"
+
+	PROFILE_CURRENT=$(current_profile "${PROFILE_TYPE}")
+	if [ "${PROFILE_NAME}" = "${PROFILE_CURRENT}" ]; then
+		yesno "${PROFILE_FORCE:-0}" || exit 0
+	fi
+
+	 stop_profile "${1}" "${2}"
+	start_profile "${1}" "${2}"
+}
+
+[ ${#} -ge 1 ] || help_message 2
 ARGS="$(getopt \
 	-l debug,force,help,version,profile:,type,current:,list:,stop:,revert,user: \
-	-o \?dfhvtc:p:l:s:r:u: -n ${PKG} -s sh -- "${@}")"
-[ ${?} = 0 ] || usage 1
+	-o \?dfhvtc:p:l:s:r:u: -n ${PACKAGE} -s sh -- "${@}")"
+[ ${?} = 0 ] || help_message 1
 eval set -- "${ARGS}"
 
 while true; do
 	case "${1}" in
 		(-d|--debug) set -x ; shift;;
-		(-f|--force) FORCE=1; shift;;
-		('-?'|-h|--help) usage 0;;
-		(-v|--version) version;;
+		(-f|--force) PROFILE_FORCE=1; shift;;
+		('-?'|-h|--help) help_message 0;;
+		(-v|--version) version_message;;
 		(-t|--type)	profile_type;;
 		(-c|--current)
 			verify_profile  "${2}"
@@ -321,26 +362,12 @@ while true; do
 			verify_profile "${2}"
 			revert_profile "${2}"
 			exit;;
-		(-u|--user) DIR="${HOME}/.${PKG}"; shift;;
+		(-u|--user) PROFILE_DIR="${HOME}/.${PACKAGE}"; shift;;
 		(*) shift; break;;
 	esac
 done
 
-set ${@/./ }
-NAME="${2}"
-TYPE="${1}"
-
-[ -n "${TYPE}" ] || die "Empty/null profile type"
-verify_profile "${TYPE}" || die "Invalid profile type"
-
-[ -n "${NAME}" ] || NAME=$(get_profile "${TYPE}")
-[ -n "${NAME}" ] || die "Could not find ${NAME} profile ${TYPE}"
-
-CURRENT=$(current_profile "${TYPE}")
-if [ "${NAME}" = "${CURRENT}" ]; then
-	[ -n "${FORCE}" ] || exit 0
-fi
-start_profile "${TYPE}" "${NAME}"
+profile "${@}"
 
 #
 # vim:fenc=utf-8:ft=sh:ci:pi:sts=0:sw=4:ts=4:
