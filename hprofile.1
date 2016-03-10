@@ -5,7 +5,7 @@
 .\" as pugblished by the Free Software Fondation, Inc.
 .\"
 .pc
-.TH HPROFILE 1 "2015-05-04" "6.0.0" "Hprofile Script Page"
+.TH HPROFILE 1 "2016-03-10" "6.1.0" "Hprofile Script Page"
 .SH NAME
 hprofile \- soft/hardware profiles management utility
 .SH DESCRIPTION
@@ -117,21 +117,55 @@ Files hierarchy to swap (or rather symlink) when a child profile become active,
 files found in `<PROFILE>/' directory
 with the extension `.<profile>' are symlinked to the file system (minus the
 `/etc/hprofile/<PROFILE>' head.)
+.SH HELPERS
+Some helpers are internally available to print formated string output or, eg., to
+start another PROFILE using \fIprofile()\fR function (See power profile for a
+pratical example which use this to start disk profile in each start_<profile>.)
+
+.TS
+tab (@);
+l lx.
+\fBbegin message\fR@T{
+Print begin message with a header in square bracket
+T}
+\fBend err, mssage\fR@T{
+Print end message with an error code in square bracket
+T}
+\fBinfo mssage\fR@T{
+Print info message prepended with a \fI* name: \fR
+T}
+\fBwarn mssage\fR@T{
+Print warn message prepended with a \fI* name: \fR
+T}
+\fBerror mssage\fR@T{
+Print error message prepended with a \fI* name: \fR
+T}
+\fBdie err mssage\fR@T{
+Print error message prepended with a \fI* name: \fR and exit err
+T}
+\fBname\fR@T{
+Name string used to prepend message with the previous helpers
+T}
+\fBprofile PROFILE[.profile]\fR@T{
+Start profile passed as first argument
+T}
+.TE
+
 .SH ENVIRONMENT
 .TP
 .B CONFDIR=/etc/hprofile
 System wide profile directory
 .TP
-.B [PROFILE]DIR=CONFDIR|HOME/.hprofile
+.B PROFILE_DIR=CONFDIR|HOME/.hprofile
 Environment variable holding the current profile directory
 .TP
-.B PROFILE=DIR/<PROFILE>-functions
+.B PROFILE_FILE=PROFILE_DIR/<profile>-functions
 Environment variable holding the current profile file
 .TP
-.B TYPE
+.B PROFILE_TYPE
 Enviroment variable holding the (parent) profile type
 .TP
-.B NAME[|(ARG-)1]
+.B PROFILE_NAME
 Enviroment variable holding the (child) profile name
 .TP
 .B RUNDIR=/var/run
@@ -140,7 +174,7 @@ Run-time directory (for <profile>-{current,previous} files)
 .B NULL=/dev/null
 Enviroment variable defining null file
 .TP
-.B COLOR=No
+.B PRINT_COLOR=No
 Dis/enable output color support
 .TP
 .B name
@@ -157,11 +191,11 @@ Probe the actual power profile
 .B hprofile
 init service script along with its configuration file.
 .TP
-.BR /etc/hprofile/PROFILES
+.BR /etc/hprofile/<PROFILES>
 .TP
-.B PROFILES
+.B <PROFILES>
 
-Each profile has a files hierarchy and (child-)profiles.
+Each PROFILE has a files hierarchy and (child-)profiles.
 The following (child-)profile name scheme conventions that apply to
 .B PROFILES
 sub-section and can be applied to the following (parrent) profiles.
