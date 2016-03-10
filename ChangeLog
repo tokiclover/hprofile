@@ -1,3 +1,8 @@
+6.1.0:
+
+Added profile() to be able to start profiles easily (see power profile);
+and cleaned the variables mess by using clean and clear names.
+
 6.0.0:
 
 Converted the API to use a single PROFILE-functions instead of using
