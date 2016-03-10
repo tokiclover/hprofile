@@ -71,31 +71,31 @@ start_test()
 
 start_adp()
 {
-	profile disk.adp
+	hprofile disk.adp
 	start
 	xbl
 }
 start_bat()
 {
-	profile disk.bat
+	hprofile disk.bat
 	start "powersave" "auto" "auto" "min_power" "1" "0" "1500" "powersave"
 	xbl 10 200 200 300
 }
 start_dyn()
 {
-	profile disk.dyn
+	hprofile disk.dyn
 	start "performance" "on" "on" "mix_power" "0" "1" "500" "performance"
 	xbl 30 400 500 600
 }
 start_med()
 {
-	profile disk.adp
+	hprofile disk.adp
 	start "performance" "on" "on" "min_power" "0" "1" "500" "performance"
 	xbl 15 150 200 300
 }
 start_quiet()
 {
-	profile disk.quiet
+	hprofile disk.quiet
 	start "powersave" "auto" "auto" "min_power" "1" "0" "2500" "powersave"
 	xbl 15 150 200 300
 }
