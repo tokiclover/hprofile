@@ -18,9 +18,10 @@ let is_bash=1
 runtime! syntax/sh.vim
 unlet b:current_syntax
 
-syn keyword svKwd begin die end error eval_colors info yesno
+syn keyword svKwd begin die end error eval_colors info yesno PRINTF
 syn keyword svKwd start_test start_pre start_post stop_pre stop_post
-syn keyword svVars CONFDIR DEFAULT NULL PKG PROFILE PROFILES RUNDIR VERSION name
+syn keyword svVars CONFDIR DEFAULT NULL PACKAGE PROFILE_FILE PROFILE_DIR
+syn keyword svVars PROFILE_NAME PROFILE_TYPE PROFILES RUNDIR VERSION name
 
 syn keyword svFunc start stop
 syn cluster shCommandSubList add=svKwd
