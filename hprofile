@@ -26,17 +26,6 @@ PROFILE_DIR="${CONFDIR}"
 name="${PACKAGE}"
 
 trap 'PRINT_COL="$(tput cols)"' WINCH
-if command -v printf &>NULL; then
-	PRINTF()
-	{
-		printf "%*b\n" "${PRINT_LEN}" "${*}"
-	}
-else
-	PRINTF()
-	{
-		echo -e "${*}"
-	}
-fi
 PRINT_COL="$(tput cols)"
 
 #
@@ -102,7 +91,7 @@ end()
 	else
 		PRINT_LEN="${PRINT_COL}"
 	fi
-	PRINTF "${@} ${suffix}"
+	printf "%*b\n" "${PRINT_LEN}" "${@} ${suffix}"
 	PRINT_EOL=
 	PRINT_LEN=0
 }
