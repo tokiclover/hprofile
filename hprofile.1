@@ -5,7 +5,7 @@
 .\" as pugblished by the Free Software Fondation, Inc.
 .\"
 .pc
-.TH HPROFILE 1 "2016-03-10" "6.1.0" "Hprofile Script Page"
+.TH HPROFILE 1 "2016-03-30" "6.1.2" "Hprofile Script Page"
 .SH NAME
 hprofile \- soft/hardware profiles management utility
 .SH DESCRIPTION
@@ -76,8 +76,11 @@ To sum up, only `\fI<PROFILE>-functions\fR' file is required along with at least
 a `start_<profile>' function for each child profile to define a valid profile.
 A list of child profiles is defined using `PROFILES' variable, while the default
 child profile is defined with `DEFAULT' variable.
+
+Note that, alternatively, <PROFILE>/functions layout is also supported (see vga
+profile) to permit having everything in a single directory.
 .TP
-.B /etc/hprofile/\fI<PROFILE>-functions\fR
+.B /etc/hprofile/\fI<PROFILE>(-|/)functions\fR
 .TS
 tab (@);
 l lx.
@@ -156,7 +159,7 @@ System wide profile directory
 .B PROFILE_DIR=CONFDIR|HOME/.hprofile
 Environment variable holding the current profile directory
 .TP
-.B PROFILE_FILE=PROFILE_DIR/<profile>-functions
+.B PROFILE_FILE=PROFILE_DIR/<profile>(-|/)functions
 Environment variable holding the current profile file
 .TP
 .B PROFILE_TYPE
@@ -190,7 +193,7 @@ init service script along with its configuration file.
 .TP
 .BR /etc/hprofile/<PROFILES>
 .TP
-.B <PROFILES>
+.B <PROFILES> {disk,power,rfkill,vga}
 
 Each PROFILE has a files hierarchy and (child-)profiles.
 The following (child-)profile name scheme conventions that apply to
@@ -216,21 +219,21 @@ Medium profile (balence between qerformance & quiet)
 T}
 .TE
 .TP
-.B disk[-functions]
+.B disk-functions
 
 This profile is tailored to manage hard disk drive and thus depends on hdparm.
 .TP
-.B power[-functions]
+.B power-functions
 
 This profile was made to be a superset of other profiles, so it depends on disk
 profile. Other profiles can be added (like rfkill profile, for example.)
 .TP
-.B rfkill[-functions]
+.B rfkill-functions
 
 RFKill wireless radio profile (Note: B for Bluetooth, W for Wireless, K for Kill, and
 SW for SWitch.)
 .TP
-.B vga[-functions]
+.B vga/functions
 .RB vga/etc/X11/xorg.conf.d/40-monitor.conf.{fglrx,intel,nouveau,nv,nvidia,radeon}
 
 Graphics Hardware (GPU) profile that can be used to switch between different
@@ -241,7 +244,7 @@ And do not forget to check the profiles if nVidia/Fglrx profiles are used;
 in which case building uVESAfb as kernel module is necessary to be able to
 get Linux Console.
 .SH AUTHORS
--tclover <tokiclover@hprofile.project>
+tokiclover <tokiclover@hprofile.project>
 .\"
 .\" vim:fenc=utf-8:ft=groff:ci:pi:sts=2:sw=2:ts=2:expandtab:
 .\"
