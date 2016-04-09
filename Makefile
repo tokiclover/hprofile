@@ -24,25 +24,24 @@ dist_EXTRA  = \
 dist_ACPI   = \
 	actions/power-profile.sh \
 	events/power-profile
-dist_PROFILE_vga    = \
-	 etc/X11/xorg.conf.d/40-monitor.conf.fglrx \
-	 etc/X11/xorg.conf.d/40-monitor.conf.intel \
-	 etc/X11/xorg.conf.d/40-monitor.conf.nouveau \
-	 etc/X11/xorg.conf.d/40-monitor.conf.nv \
-	 etc/X11/xorg.conf.d/40-monitor.conf.nvidia \
-	 etc/X11/xorg.conf.d/40-monitor.conf.radeon
+dist_PROFILES = \
+	disk-functions \
+	power-functions \
+	rfkill-functions \
+	vga/functions \
+	vga/etc/X11/xorg.conf.d/40-monitor.conf.fglrx \
+	vga/etc/X11/xorg.conf.d/40-monitor.conf.intel \
+	vga/etc/X11/xorg.conf.d/40-monitor.conf.nouveau \
+	vga/etc/X11/xorg.conf.d/40-monitor.conf.nv \
+	vga/etc/X11/xorg.conf.d/40-monitor.conf.nvidia \
+	vga/etc/X11/xorg.conf.d/40-monitor.conf.radeon
 DISTDIRS    = \
 	$(bindir) \
 	$(docdir)/$(PACKAGE)-$(VERSION) $(mandir)/man1 \
 	$(svcconfdir) $(svcinitdir) $(sysconfdir)/$(PACKAGE) \
 	$(sysconfdir)/acpi/actions $(sysconfdir)/acpi/events
-DISTFILES   = $(PROFILES)
+DISTFILES   = $(dist_PROFILES)
 .SECONDEXPANSION:
-PROFILES    = \
-	disk \
-	power \
-	rfkill \
-	vga
 
 .FORCE:
 .PHONY: all install install-doc install-profile
@@ -62,33 +61,19 @@ $(dist_EXTRA): .FORCE
 	$(install_DATA) $@ $(DESTDIR)$(docdir)/$(PACKAGE)-$(VERSION)/$@
 install-dir: .FORCE
 	$(MKDIR_P) $(DISTDIRS:%=$(DESTDIR)%)
-$(PROFILES): .FORCE
-	$(install_DATA) $@-functions $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$@-functions
-	for file in $(dist_PROFILE_$@); do \
-		$(install_DATA) -D $@/$${file} \
-		$(DESTDIR)/$(sysconfdir)/$(PACKAGE)/$@/$${file}; \
-	done
+$(dist_PROFILES): .FORCE
+	$(install_DATA) -D $@ $(DESTDIR)/$(sysconfdir)/$(PACKAGE)/$@
 
 .PHONY: uninstall uninstall-doc
 
-uninstall: uninstall-doc $(foreach dir,$(PROFILES),uninstall-profile-$(dir))
+uninstall: uninstall-doc
+	rm -f $(dist_ACPI:%=$(DESTDIR)$(sysconfdir)/acpi/%)
+	rm -f $(dist_EXTRA:%=$(DESTDIR)$(docdir)/$(PACKAGE)-$(VERSION)/%)
+	rm -f $(dist_PROFILES:%=$(DESTDIR)$(sysconfdir)/$(PACKAGE)/%)
 	rm -f $(DESTDIR)$(bindir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(mandir)/man1/$(PACKAGE).1
 	rm -f $(DESTDIR)$(svcinitdir)/$(PACKAGE)
 	rm -f $(DESTDIR)$(svcconfdir)/$(PACKAGE)
-	rm -f $(DESTDIR)$(sysconfdir)/acpi/actions/power
-	rm -f $(DESTDIR)$(sysconfdir)/acpi/events/power
-	for dir in $(DISTDIRS); do \
-		rmdir $(DESTDIR)$${dir}; \
-	done
-uninstall-profile-%:
-	for file in $(dist_PROFILE_$*); do \
-		rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$*/$${file}; \
-	done
-	-rmdir -p $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$*
-	rm -f $(DESTDIR)$(sysconfdir)/$(PACKAGE)/$*-functions
-uninstall-doc:
-	for doc in $(dist_EXTRA); do \
-		rm -f $(DESTDIR)$(docdir)/$(PACKAGE)-$(VERSION)/$${doc}; \
-	done
+	-rmdir $(DESTDIR)$(sysconfdir)/$(PACKAGE)/*
+	-rmdir $(DISTDIRS:%=$(DESTDIR)%)
 
