@@ -36,7 +36,7 @@ error()
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
 	local PFX="${name:+${CLR_MAG}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_RED}*${CLR_RST} ${PFX} ${@}" >&2
+	echo -e "${PRINT_EOL}${CLR_RED}ERROR:${CLR_RST} ${PFX} ${@}" >&2
 }
 
 #
@@ -55,7 +55,7 @@ info()
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
 	local PFX="${name:+${CLR_YLW}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_BLU}*${CLR_RST} ${PFX} ${@}"
+	echo -e "${PRINT_EOL}${CLR_BLU}INFO:${CLR_RST} ${PFX} ${@}"
 }
 
 #
@@ -66,7 +66,7 @@ warn()
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
 	local PFX="${name:+${CLR_RED}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_YLW}*${CLR_RST} ${PFX} ${@}"
+	echo -e "${PRINT_EOL}${CLR_YLW}WARN:${CLR_RST} ${PFX} ${@}"
 }
 
 #
