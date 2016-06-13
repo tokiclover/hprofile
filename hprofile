@@ -3,7 +3,7 @@
 # Header: hprofile
 # Aythor:
 # 	Copyright (c) 2003-2004 Martin Aspeli <optilude@gmx/net>
-# 	Copyright (c) 2014-2016 -tclover <tokiclover@gmail.com>
+# 	Copyright (c) 2014-2016 tokiclover <tokiclover@gmail.com>
 # License: GPL-2
 #
 
@@ -18,15 +18,15 @@ elif [ -n "${BASH_VERSION}" ]; then
 fi
 
 PACKAGE=hprofile
-VERSION=6.1.2
+VERSION=6.1.3
 :	${CONFDIR:=/etc/${PACKAGE}}
 :	${RUNDIR:=${TMPDIR:-/tmp}}
 NULL=/dev/null
 PROFILE_DIR="${CONFDIR}"
 name="${PACKAGE}"
 
-trap 'PRINT_COL="$(tput cols)"' WINCH
-PRINT_COL="$(tput cols)"
+trap 'PRINT_COL="${COLUMNS:-$(tput cols)}"' WINCH
+PRINT_COL="${COLUMNS:-$(tput cols)}"
 
 #
 # @FUNCTION: Print error message to stderr
@@ -35,8 +35,8 @@ error()
 {
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${CLR_MAG}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_RED}ERROR:${CLR_RST} ${PFX} ${@}" >&2
+	local PFX="${name:+${COLOR_MAGENTA}${name}:${COLOR_RESET}}"
+	echo -e "${PRINT_EOL}${COLOR_RED}ERROR:${COLOR_RESET} ${PFX} ${@}" >&2
 }
 
 #
@@ -54,8 +54,8 @@ info()
 {
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${CLR_YLW}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_BLU}INFO:${CLR_RST} ${PFX} ${@}"
+	local PFX="${name:+${COLOR_YELLOW}${name}:${COLOR_RESET}}"
+	echo -e "${PRINT_EOL}${COLOR_BLUE}INFO:${COLOR_RESET} ${PFX} ${@}"
 }
 
 #
@@ -65,8 +65,8 @@ warn()
 {
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${CLR_RED}${name}:${CLR_RST}}"
-	echo -e "${PRINT_EOL}${CLR_YLW}WARN:${CLR_RST} ${PFX} ${@}"
+	local PFX="${name:+${COLOR_RED}${name}:${COLOR_RESET}}"
+	echo -e "${PRINT_EOL}${COLOR_YELLOW}WARN:${COLOR_RESET} ${PFX} ${@}"
 }
 
 #
@@ -78,7 +78,7 @@ begin()
 	PRINT_EOL="\n"
 	local msg="${*}"
 	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${CLR_MAG}[${CLR_BLU}${name}${CLR_MAG}]${CLR_RST}}"
+	local PFX="${name:+${COLOR_MAGENTA}[${COLOR_BLUE}${name}${COLOR_MAGENTA}]${COLOR_RESET}}"
 	echo -en "${PFX} ${@}"
 }
 
@@ -88,9 +88,9 @@ begin()
 end()
 {
 	local suffix
-	case "${1-0}" in
-		(0) suffix="${CLR_BLU}[${CLR_GRN}Ok${CLR_BLU}]${CLR_RST}";;
-		(*) suffix="${CLR_YLW}[${CLR_RED}No${CLR_YLW}]${CLR_RST}";;
+	case "${1:-0}" in
+		(0) suffix="${COLOR_BLUE}[${COLOR_GREEN}ok${COLOR_BLUE}]${COLOR_RESET}";;
+		(*) suffix="${COLOR_YELLOW}[${COLOR_RED}no${COLOR_YELLOW}]${COLOR_RESET}";;
 	esac
 	shift
 	if [ -n "${PRINT_EOL}" ]; then
@@ -98,7 +98,7 @@ end()
 	else
 		PRINT_LEN="${PRINT_COL}"
 	fi
-	printf "${@} ${suffix}"
+	printf "%*b\n" "${PRINT_LEN}" "${@} ${suffix}"
 	PRINT_EOL=
 	PRINT_LEN=0
 }
@@ -122,13 +122,24 @@ yesno()
 #
 eval_colors()
 {
-	local BLD ESC FGD clr
-	BLD='1;' ESC='\e[' FGD='3'
+	local ESC FGD BGD color
+	ESC='\e[' FGD='3' BGD='4'
 
-	for clr in 0:BLK 1:RED 2:GRN 3:YLW 4:BLU 5:MAG 6:CYN 7:WHT; do
-		eval CLR_${clr#*:}="'${ESC}${BLD}${FGD}${clr%:*}m'"
+	for color in 0:BLACK 1:RED 2:GREEN 3:YELLOW 4:BLUE 5:MAGENTA 6:CYAN 7:WHITE; do
+		eval COLOR_${color#*:}="'${ESC}${FGD}${color%:*}m'"
+		eval COLOR_BG_${color#*:}="'${ESC}${BGD}${color%:*}m'"
 	done
-	CLR_RST="${ESC}0m"
+	COLOR_RESET="${ESC}0m"
+	COLOR_BOLD="${ESC}1m"
+	COLOR_UNDERLINE="${ESC}4m"
+	COLOR_ITALIC="${ESC}3m"
+	if [ "${1}" = 256 ]; then
+		local i
+		for i in seq 0 255; do
+			eval BG_${i}="'${ESC}${BGD}${i}m'"
+			eval FG_${i}="'${ESC}${FGD}${i}m'"
+		done
+	fi
 }
 
 if [ -t 1 ] && yesno "${PRINT_COLOR:-Yes}"; then
@@ -161,7 +172,7 @@ ${1:+exit ${1}}
 
 version_message()
 {
-	echo -e "${CLR_BLU}${PACKAGE}${CLR_RST} version ${CLR_MAG}${VERSION}${CLR_RST}"
+	echo -e "${COLOR_BLUE}${PACKAGE}${COLOR_RESET} version ${COLOR_MAGENTA}${VERSION}${COLOR_RESET}"
 	exit
 }
 
