@@ -10,6 +10,11 @@ depend()
 	after modules
 }
 
+post_start()
+{
+	[ -x /etc/init.d/console ] && /etc/init.d/console restart
+}
+
 start()
 {
 	local p
@@ -17,6 +22,7 @@ start()
 		ebegin "Starting ${p} profile"
 		hprofile -f ${p}
 		eend "${?}"
+		[ "${p}" = "vga" ] && post_start
 	done
 	return 0
 }
