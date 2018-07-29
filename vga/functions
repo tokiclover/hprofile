@@ -13,20 +13,6 @@ xset()
 	[ "$(eselect xvmc   show)" != "${2}" ] && eselect xvmc   set "${2}"
 }
 
-post()
-{
-	[ -x /etc/init.d/consolefont ] &&
-	/etc/init.d/consolefont restart
-}
-start_post()
-{
-	post
-}
-stop_post()
-{
-	post
-}
-
 start_test()
 {
 	local switch=/sys/kernel/debug/vgaswitcheroo/switch
