@@ -11,9 +11,10 @@ ata()
 }
 usb()
 {
-	local dev
+	local dev val
 	for dev in /sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*sd[a-z]; do
-		case "$(cat ${dev}/removable)" in
+		read val <${dev}/removable
+		case "${val}" in
 			(1) echo noop >${dev}/queue/scheduler;;
 			(0) echo cfq  >${dev}/queue/scheduler;;
 		esac
@@ -30,7 +31,12 @@ disk()
 
 start_test()
 {
-	local state="$(cat /sys/class/power_supply/A*/online 2>${NULL})"
+	local file=/sys/class/power_supply/AC0/online state
+	if [ ! -r ${file} ]; then
+		echo "adp"
+		return 0
+	fi
+	read state <${file}
 	case "${state}" in
 		(0) echo "bat";;
 		(*) echo "adp";;
