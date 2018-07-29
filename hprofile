@@ -207,7 +207,11 @@ get_profile()
 current_profile()
 {
 	local file="${RUNDIR}/${PACKAGE}:${1}-current"
-	[ -s "${file}" ] && echo $(cat "${file}")
+	if [ -s "${file}" ]; then
+		local val
+		read val <${file}
+		printf "${val}"
+	fi
 }
 
 #
@@ -255,7 +259,11 @@ stop_profile()
 revert_profile()
 {
 	local file="${RUNDIR}/${PACKAGE}:${1}-previous" p
-	[ -s "${file}" ] && p=$(cat "${file}") || return
+	if [ -s "${file}" ]; then
+		read p <${file}
+	else
+		return
+	fi
 	[ -n "${p}" ] && start_profile "${1}" "${p}"
 }
 
