@@ -1,3 +1,8 @@
+6.2.0:
+
+Random fixes; major refactorization of {current,previous} profiles handling;
+New message formatting; and clean ups.
+
 6.1.3:
 
 Cleaned color support, so, escape sequences can be used in profiles;
