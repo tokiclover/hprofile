@@ -76,7 +76,7 @@ or after starting and or stopping a child profile.
 To sum up, only `\fI<PROFILE>-functions\fR' file is required along with at least
 a `start_<profile>' function for each child profile to define a valid profile.
 A list of child profiles is defined using `PROFILES' variable, while the default
-child profile is defined with `DEFAULT' variable.
+child profile is defined with \fBPROFILE_DEFAULT\fR variable.
 
 Note that, alternatively, <PROFILE>/functions layout is also supported (see vga
 profile) to permit having everything in a single directory.
@@ -85,7 +85,7 @@ profile) to permit having everything in a single directory.
 .TS
 tab (@);
 l lx.
-\fBDEFAULT\fR@T{
+\fBPROFILE_DEFAULT\fR@T{
 Default child profile to use when starting (parent) profile type (optional)
 T}
 \fBPROFILES\fR@T{

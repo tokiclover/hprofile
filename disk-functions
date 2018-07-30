@@ -3,7 +3,7 @@
 #
 
 PROFILES='bat adp dyn quiet'
-DEFAULT=adp
+PROFILE_DEFAULT=adp
 
 ata()
 {
