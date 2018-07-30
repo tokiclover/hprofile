@@ -24,7 +24,7 @@ start_test()
 	fi
 	drv="$(lspci -k | sed -nre 's/.*Kernel driver in use: ((i915|fglrx|radeon|nouveau|nvidia))/\1/p')"
 	[ "${drv}" = "i915" ] && drv=intel
-	echo "${drv}"
+	printf "${drv}"
 }
 
 start_fglrx()

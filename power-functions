@@ -69,8 +69,8 @@ start_test()
 	fi
 	read state <${file}
 	case "${state}" in
-		(0) echo "bat";;
-		(*) echo "adp";;
+		(0) printf "bat";;
+		(*) printf"adp";;
 	esac
 }
 
