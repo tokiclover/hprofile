@@ -220,9 +220,9 @@ verify_profile()
 # @FUNCTION: Print the profile to be used
 # @ARGS: <type> <profile>
 #
-get_profile()
+profile_default()
 {
-	DEBUG "function=get_profile( $@ )"
+	DEBUG "function=profile_default( $@ )"
 	run_cmd start_test && return
 	if [ -n "${PROFILE_DEFAULT:-$DEFAULT}" ]; then
 		printf "${PROFILE_DDEFAULT:-$DEFAULT}"
@@ -378,7 +378,7 @@ profile()
 
 	[ -n "${PROFILE_TYPE}" ] || die "Empty/null profile type"
 	verify_profile "${PROFILE_TYPE}" || die "Invalid profile type"
-	[ -n "${PROFILE_NAME}" ] || PROFILE_NAME=$(get_profile "${PROFILE_TYPE}")
+	[ -n "${PROFILE_NAME}" ] || PROFILE_NAME=$(profile_default "${PROFILE_TYPE}")
 	[ -n "${PROFILE_NAME}" ] || die "Could not find ${PROFILE_NAME} profile ${PROFILE_TYPE}"
 
 	PROFILE_CURRENT=$(current_profile "${PROFILE_TYPE}")
@@ -412,7 +412,7 @@ while true; do
 			exit;;
 		(-p|--profile)
 			verify_profile "${2}"
-			get_profile    "${2}"
+			profile_default    "${2}"
 			exit;;
 		(-l|--list)
 			verify_profile "${2}"
