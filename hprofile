@@ -89,7 +89,7 @@ begin()
 	__eol_print__=
 	__print_eol__="\n"
 	__print_len__=$((${#name}*2+6+${#message}))
-	local prefix="${name:+${COLOR_FG_magenta}[${COLOR_FG_blue}${name}${COLOR_FG_magenta}]${COLOR_RESET}}"
+	local prefix="${name:+${COLOR_FG_magenta}{${COLOR_FG_blue}${name}${COLOR_FG_magenta}}${COLOR_RESET}}"
 	printf "${prefix} ${message}"
 }
 
@@ -102,8 +102,8 @@ end()
 	shift
 	local message="${*}"
 	case "${ret}" in
-		(0) suffix="${COLOR_FG_blue}(${name}) [${COLOR_FG_green}ok${COLOR_FG_blue}]${COLOR_RESET}";;
-		(*) suffix="${COLOR_FG_yellow}(${name}) [${COLOR_FG_red}no${COLOR_FG_yellow}]${COLOR_RESET}";;
+		(0) suffix="${COLOR_FG_blue}[${name}] {${COLOR_FG_green}ok${COLOR_FG_blue}}${COLOR_RESET}";;
+		(*) suffix="${COLOR_FG_yellow}[${name}] {${COLOR_FG_red}no${COLOR_FG_yellow}}${COLOR_RESET}";;
 	esac
 	__print_len__=$((${COLUMNS}-${__print_len__}))
 	printf "%*b\n" "${__print_len__}" "${message} ${suffix}"
