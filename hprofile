@@ -127,7 +127,6 @@ eval_colors()
 {
 	local e f b c
 	e='\e[' f='3' b='4'
-	DEBUG "function=eval_colors( $@ )"
 
 	for c in 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white; do
 		eval COLOR_FG_${c#*:}="'${e}1;${f}${c%:*}m'"
@@ -191,11 +190,19 @@ version_message()
 verify_profile()
 {
 	local char
-	[ "${#}" = 1  ] && [ -n "${1}"   ] || die "Invalid profile type ${1}"
+
+	if ! [ "${#}" = 1  -a -n "${1}"   ]; then
+		die "Invalid profile type \`${1}'"
+	fi
 	for char in - /; do
 		PROFILE_FILE="${PROFILE_DIR}/${1}${char}functions"
-		[ -f "${PROFILE_FILE}" ] && source "${PROFILE_FILE}" && break
+		if [ -r "${PROFILE_FILE}" ]; then
+			if . "${PROFILE_FILE}"; then
+				return 0
+			fi
+		fi
 	done
+	return 1
 }
 
 #
@@ -205,7 +212,11 @@ verify_profile()
 get_profile()
 {
 	run_cmd start_test && return
-	[ -n "${DEFAULT}" ] && echo "${DEFAULT}" || echo -n "${PROFILES%% *}"
+	if [ -n "${PROFILE_DEFAULT:-$DEFAULT}" ]; then
+		printf "${PROFILE_DDEFAULT:-$DEFAULT}"
+	else
+		printf "${PROFILES%% *}"
+	fi
 }
 
 #
@@ -281,8 +292,13 @@ revert_profile()
 profile_type()
 {
 	local f t
-	for f in "${PROFILE_DIR}"/*-functions; do
-		t="${f##*/}"; echo -n "${t%-*} "
+	for f in ${PROFILE_DIR}/*-functions; do
+		t="${f##*/}"
+		printf "${t%-*} "
+	done
+	for f in ${PROFILE_DIR}/*/functions; do
+		t="${f%/functions}"
+		printf "${t##*/} "
 	done
 	echo
 	exit
@@ -335,7 +351,7 @@ start_profile()
 
 profile()
 {
-	local PROFILE_CURRENT PROFILE_FILE PROFILE_NAME PROFILE_TYPE
+	local PROFILE_CURRENT PROFILE_DEFAULT PROFILE_FILE PROFILE_NAME PROFILE_TYPE
 	set ${@/./ }
 	PROFILE_NAME="${2}"
 	PROFILE_TYPE="${1}"
