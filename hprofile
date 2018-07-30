@@ -199,16 +199,36 @@ version_message()
 #
 verify_profile()
 {
-	local char
+	local char val var
 	DEBUG "function=verify_profile( $@ )"
 
 	if ! [ "${#}" = 1  -a -n "${1}"   ]; then
 		die "Invalid profile type \`${1}'"
 	fi
+
+	PROFILE_STATE_FILE=${RUNDIR}/${PACKAGE}:${1}
+	if [ -r ${PROFILE_STATE_FILE} ]; then
+		. ${PROFILE_STATE_FILE}
+	else
+		var=${RUNDIR}/${PACKAGE}:${1}-current
+		if [ -r ${var} ]; then
+			read val <${var}
+			PROFILE_CURRENT="${val}"
+			rm -r ${var}
+		fi
+		var=${RUNDIR}/${PACKAGE}:${1}-previous
+		if [ -r ${var} ]; then
+			read val <${var}
+			PROFILE_CURRENT="${val}"
+			rm -f ${var}
+		fi
+	fi
+
 	for char in - /; do
 		PROFILE_FILE="${PROFILE_DIR}/${1}${char}functions"
 		if [ -r "${PROFILE_FILE}" ]; then
 			if . "${PROFILE_FILE}"; then
+				PROFILE_TYPE="${1}"
 				return 0
 			fi
 		fi
@@ -233,21 +253,6 @@ profile_default()
 }
 
 #
-# @FUNCTION: Print the currently selected profile
-# @ARGS: <type>
-#
-current_profile()
-{
-	DEBUG "function=current_profile( $@ )"
-	local file="${RUNDIR}/${PACKAGE}:${1}-current"
-	if [ -s "${file}" ]; then
-		local val
-		read val <${file}
-		printf "${val}"
-	fi
-}
-
-#
 # @FUNCTION: run script passed as positional parameter 1
 # @ARGS: <script> <args>
 #
@@ -268,14 +273,13 @@ run_cmd()
 #
 stop_profile()
 {
-	local cmd ret p c
+	local cmd ret
 	DEBUG "function=stop_profile( $@ )"
-	c="${PROFILE_CURRENT:-$(current_profile ${1})}"
-	[ -n "${c}" ] && p="${c}" || return 0
+	[ -n "${PROFILE_CURRENT}" ] || return 0
 
-	begin "Stoping ${1}.${p} profile"
-	for cmd in stop_pre stop_${p} stop_post; do
-		run_cmd "${cmd}" "${p}"
+	begin "Stoping ${1}.${PROFILE_CURRENT} profile"
+	for cmd in stop_pre stop_${PROFILE_CURRENT} stop_post; do
+		run_cmd "${cmd}" "${PROFILE_CURRENT}"
 		case ${?} in
 			(111) ;;
 			(*) ret=$((${ret}+${?}));;
@@ -283,24 +287,8 @@ stop_profile()
 	done
 	end ${ret}
 	[ ${ret:-0} = 0 ] || return ${ret}
-	echo        > "${RUNDIR}/${PACKAGE}:${1}-current"
-	echo "${p}" > "${RUNDIR}/${PACKAGE}:${1}-previous"
-}
-
-#
-# @FUNCTION: Revert to the previous profile of the given type
-# @ARGS: <type>
-#
-revert_profile()
-{
-	local file="${RUNDIR}/${PACKAGE}:${1}-previous" p
-	DEBUG "function=revert_profile( $@ )"
-	if [ -s "${file}" ]; then
-		read p <${file}
-	else
-		return
-	fi
-	[ -n "${p}" ] && start_profile "${1}" "${p}"
+	PROFILE_PREVIOUS="${PROFILE_CURRENT}"
+	PROFILE_CURRENT=
 }
 
 #
@@ -322,6 +310,13 @@ profile_type()
 	exit
 }
 
+#
+# @FUNCTION: Save current profile
+#
+profile_save()
+{
+	printf "PROFILE_CURRENT='${PROFILE_CURRENT}'\nPROFILE_PREVIOUS='${PROFILE_PREVIOUS}'" >${PROFILE_STATE_FILE}
+}
 #
 # @FUNCTION: Swap files with extension .<profile> in the appropriate profile
 # directory, and sym-link files appropriately.
@@ -361,7 +356,7 @@ start_profile()
 	done
 	end ${ret}
 	# Save profile
-	[ ${ret:-0} = 0 ] && echo "${2}" >"${RUNDIR}/${PACKAGE}:${1}-current" || return ${ret}
+	[ ${ret:-0} = 0 ] && PROFILE_CURRENT="${2}" || return ${ret}
 	# Sym-link files if available
 	if [ -d "${PROFILE_DIR}/${1}" ]; then
 		swap_files "${1}" "${2}" || error "Failed to swap ${1}.${2} files"
@@ -371,7 +366,7 @@ start_profile()
 
 profile()
 {
-	local PROFILE_CURRENT PROFILE_DEFAULT PROFILE_FILE PROFILE_NAME PROFILE_TYPE
+	local PROFILE_DEFAULT PROFILE_FILE PROFILE_NAME PROFILE_TYPE
 	DEBUG "function=profile( $@ )"
 	set ${@/./ }
 	PROFILE_NAME="${2}"
@@ -383,7 +378,6 @@ profile()
 	[ -n "${PROFILE_NAME}" ] || PROFILE_NAME="${PROFILE_DEFAULT:-$(profile_default)}"
 	[ -n "${PROFILE_NAME}" ] || die "Could not find ${PROFILE_NAME} profile ${PROFILE_TYPE}"
 
-	PROFILE_CURRENT=$(current_profile "${PROFILE_TYPE}")
 	if [ "${PROFILE_NAME}" = "${PROFILE_CURRENT}" ]; then
 		yesno "${PROFILE_FORCE:-0}" || exit 0
 	fi
@@ -394,6 +388,7 @@ profile()
 
 [ ${#} -ge 1 ] || help_message 2
 PROFILE_DEBUG=false
+trap profile_save EXIT
 ARGS="$(getopt \
 	-l debug,force,help,trace,version,profile:,type,current:,list:,stop:,revert,user: \
 	-o \?dfhvtc:p:l:s:r:u:x -n ${PACKAGE} -s sh -- "${@}")"
@@ -410,11 +405,11 @@ while true; do
 		(-t|--type)	profile_type;;
 		(-c|--current)
 			verify_profile  "${2}"
-			current_profile "${2}"
+			echo "${PROFILE_CURRENT}"
 			exit;;
 		(-p|--profile)
 			verify_profile "${2}"
-			profile_default    "${2}"
+			profile_default "${2}"
 			exit;;
 		(-l|--list)
 			verify_profile "${2}"
@@ -425,7 +420,9 @@ while true; do
 			exit;;
 		(-r|--revert)
 			verify_profile "${2}"
-			revert_profile "${2}"
+			if [ -n "${PROFILE_PREVIOUS}" ]; then
+				start_profile "${2}" "${PROFILE_PREVIOUS}"
+			fi
 			exit;;
 		(-u|--user) PROFILE_DIR="${HOME}/.${PACKAGE}"; shift;;
 		(*) shift; break;;
