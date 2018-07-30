@@ -12,31 +12,33 @@ if [ -n "${ZSH_VERSION}" ]; then
 	setopt SH_WORD_SPLIT
 	setopt EXTENDED_GLOB NULL_GLOB
 	disable -r end
+	NULLCMD=:
 elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs nullglob
 	shopt -qs extglob
 fi
 
 PACKAGE=hprofile
-VERSION=6.1.3
+VERSION=6.2.0
 :	${CONFDIR:=/etc/${PACKAGE}}
 :	${RUNDIR:=${TMPDIR:-/tmp}}
 NULL=/dev/null
 PROFILE_DIR="${CONFDIR}"
 name="${PACKAGE}"
 
-trap 'PRINT_COL="${COLUMNS:-$(tput cols)}"' WINCH
-PRINT_COL="${COLUMNS:-$(tput cols)}"
+trap '__print__col=${COLUMNS:-$(tput cols)}' WINCH
+__print__col="${COLUMNS:-$(tput cols)}"
+__eol_print__="\n"
 
 #
 # @FUNCTION: Print error message to stderr
 #
 error()
 {
-	local msg="${*}"
-	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${COLOR_MAGENTA}${name}:${COLOR_RESET}}"
-	echo -e "${PRINT_EOL}${COLOR_RED}ERROR:${COLOR_RESET} ${PFX} ${@}" >&2
+	local message="${*}"
+	__print_len__=$((${#name}+3+${#message}))
+	local prefix="${name:+${COLOR_FG_magenta}${name}}"
+	printf "${__print_eol__}${prefix} ${COLOR_FG_red}error${COLOR_RESET}: ${message}${__eol_print__}" >&2
 }
 
 #
@@ -52,10 +54,10 @@ die()
 #
 info()
 {
-	local msg="${*}"
-	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${COLOR_YELLOW}${name}:${COLOR_RESET}}"
-	echo -e "${PRINT_EOL}${COLOR_BLUE}INFO:${COLOR_RESET} ${PFX} ${@}"
+	local message="${*}"
+	__print_len__=$((${#name}+3+${#message}))
+	local prefix="${name:+${COLOR_FG_yellow}${name}}"
+	printf "${__print_eol__}${prefix} ${COLOR_FG_blue}info${COLOR_RESET}: ${message}${__eol_print__}"
 }
 
 #
@@ -63,10 +65,10 @@ info()
 #
 warn()
 {
-	local msg="${*}"
-	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${COLOR_RED}${name}:${COLOR_RESET}}"
-	echo -e "${PRINT_EOL}${COLOR_YELLOW}WARN:${COLOR_RESET} ${PFX} ${@}"
+	local message="${*}"
+	__print_len__=$((${#name}+3+${#message}))
+	local prefix="${name:+${COLOR_FG_red}${name}}"
+	printf "${__print_eol__}${prefix} ${COLOR_FG_yellow}warning${COLOR_RESET}: ${message}${__eol_print__}" >&2
 }
 
 #
@@ -74,12 +76,13 @@ warn()
 #
 begin()
 {
-	echo -en "${PRINT_EOL}"
-	PRINT_EOL="\n"
-	local msg="${*}"
-	PRINT_LEN=$((${#name}+3+${#msg}))
-	local PFX="${name:+${COLOR_MAGENTA}[${COLOR_BLUE}${name}${COLOR_MAGENTA}]${COLOR_RESET}}"
-	echo -en "${PFX} ${@}"
+	local message="${*}"
+	printf "${__print_eol__}"
+	__eol_print__=
+	__print_eol__="\n"
+	__print_len__=$((${#name}*2+6+${#message}))
+	local prefix="${name:+${COLOR_FG_magenta}[${COLOR_FG_blue}${name}${COLOR_FG_magenta}]${COLOR_RESET}}"
+	printf "${prefix} ${message}"
 }
 
 #
@@ -87,20 +90,19 @@ begin()
 #
 end()
 {
-	local suffix
-	case "${1:-0}" in
-		(0) suffix="${COLOR_BLUE}[${COLOR_GREEN}ok${COLOR_BLUE}]${COLOR_RESET}";;
-		(*) suffix="${COLOR_YELLOW}[${COLOR_RED}no${COLOR_YELLOW}]${COLOR_RESET}";;
-	esac
+	local suffix ret="${1:-0}"
 	shift
-	if [ -n "${PRINT_EOL}" ]; then
-		PRINT_LEN=$((${PRINT_COL}-${PRINT_LEN}))
-	else
-		PRINT_LEN="${PRINT_COL}"
-	fi
-	printf "%*b\n" "${PRINT_LEN}" "${@} ${suffix}"
-	PRINT_EOL=
-	PRINT_LEN=0
+	local message="${*}"
+	case "${ret}" in
+		(0) suffix="${COLOR_FG_blue}(${name}) [${COLOR_FG_green}ok${COLOR_FG_blue}]${COLOR_RESET}";;
+		(*) suffix="${COLOR_FG_yellow}(${name}) [${COLOR_FG_red}no${COLOR_FG_yellow}]${COLOR_RESET}";;
+	esac
+	__print_len__=$((${COLUMNS}-${__print_len__}))
+	printf "%*b\n" "${__print_len__}" "${message} ${suffix}"
+	__eol_print__="\n"
+	__print_eol__=
+	__print_len__=0
+	return "${ret}"
 }
 
 #
@@ -118,26 +120,32 @@ yesno()
 	esac
 }
 
+#
 # @FUNCTION: Colors handler
 #
 eval_colors()
 {
-	local ESC FGD BGD color
-	ESC='\e[' FGD='3' BGD='4'
+	local e f b c
+	e='\e[' f='3' b='4'
+	DEBUG "function=eval_colors( $@ )"
 
-	for color in 0:BLACK 1:RED 2:GREEN 3:YELLOW 4:BLUE 5:MAGENTA 6:CYAN 7:WHITE; do
-		eval COLOR_${color#*:}="'${ESC}${FGD}${color%:*}m'"
-		eval COLOR_BG_${color#*:}="'${ESC}${BGD}${color%:*}m'"
+	for c in 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white; do
+		eval COLOR_FG_${c#*:}="'${e}1;${f}${c%:*}m'"
+		eval COLOR_BG_${c#*:}="'${e}1;${b}${c%:*}m'"
+		eval COLOR_FG_${c%:*}="'${e}${f}${c%:*}m'"
+		eval COLOR_BG_${c%:*}="'${e}${b}${c%:*}m'"
 	done
-	COLOR_RESET="${ESC}0m"
-	COLOR_BOLD="${ESC}1m"
-	COLOR_UNDERLINE="${ESC}4m"
-	COLOR_ITALIC="${ESC}3m"
+
+	COLOR_RESET="${e}0m"
+	COLOR_BOLD="${e}1m"
+	COLOR_UNDERLINE="${e}4m"
+	COLOR_ITALIC="${e}3m"
+
 	if [ "${1}" = 256 ]; then
 		local i
 		for i in seq 0 255; do
-			eval BG_${i}="'${ESC}48;5;${i}m'"
-			eval FG_${i}="'${ESC}38;5;${i}m'"
+			eval COLOR_BG_${i}="'${e}48;5;${i}m'"
+			eval COLOR_FG_${i}="'${e}38;5;${i}m'"
 		done
 	fi
 }
@@ -172,7 +180,7 @@ ${1:+exit ${1}}
 
 version_message()
 {
-	echo -e "${COLOR_BLUE}${PACKAGE}${COLOR_RESET} version ${COLOR_MAGENTA}${VERSION}${COLOR_RESET}"
+	echo -e "${COLOR_FG_bluee}${PACKAGE}${COLOR_RESET} version ${COLOR_FG_magenta}${VERSION}${COLOR_RESET}"
 	exit
 }
 
