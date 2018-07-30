@@ -26,6 +26,14 @@ NULL=/dev/null
 PROFILE_DIR="${CONFDIR}"
 name="${PACKAGE}"
 
+DEBUG()
+{
+	if yesno ${PROFILE_DEBUG}; then
+		printf "${__print_eol__}${name}: debug: ${@}${__eol_print__}" >&2
+	fi
+	return 0
+}
+
 trap '__print__col=${COLUMNS:-$(tput cols)}' WINCH
 __print__col="${COLUMNS:-$(tput cols)}"
 __eol_print__="\n"
@@ -127,6 +135,7 @@ eval_colors()
 {
 	local e f b c
 	e='\e[' f='3' b='4'
+	DEBUG "function=eval_colors( $@ )"
 
 	for c in 0:black 1:red 2:green 3:yellow 4:blue 5:magenta 6:cyan 7:white; do
 		eval COLOR_FG_${c#*:}="'${e}1;${f}${c%:*}m'"
@@ -157,9 +166,10 @@ fi
 help_message()
 {
 	cat <<-EOH
-  usage: ${PACKAGE} [options] <type>[.<profile>]
+  usage: ${PACKAGE} [OPTIONS] <TYPE>[.<PROFILE>]
 
-    -d, --debug              Enable debug mode
+    -d, --debug              Enable debug output
+    -x, --trace              Enable shell trace
     -t, --type               Print all known profiles types
     -c, --current=<type>     Print the current profile <type>
     -p, --profile=<type>     Print the profile that would be used
@@ -190,6 +200,7 @@ version_message()
 verify_profile()
 {
 	local char
+	DEBUG "function=verify_profile( $@ )"
 
 	if ! [ "${#}" = 1  -a -n "${1}"   ]; then
 		die "Invalid profile type \`${1}'"
@@ -211,6 +222,7 @@ verify_profile()
 #
 get_profile()
 {
+	DEBUG "function=get_profile( $@ )"
 	run_cmd start_test && return
 	if [ -n "${PROFILE_DEFAULT:-$DEFAULT}" ]; then
 		printf "${PROFILE_DDEFAULT:-$DEFAULT}"
@@ -225,6 +237,7 @@ get_profile()
 #
 current_profile()
 {
+	DEBUG "function=current_profile( $@ )"
 	local file="${RUNDIR}/${PACKAGE}:${1}-current"
 	if [ -s "${file}" ]; then
 		local val
@@ -239,6 +252,7 @@ current_profile()
 #
 run_cmd()
 {
+	DEBUG "function=run_cmd( $@ )"
 	local CMD="${1}"; shift
 	if command -v ${CMD} >${NULL} 2>&1; then
 		eval ${CMD} "${@}"
@@ -254,6 +268,7 @@ run_cmd()
 stop_profile()
 {
 	local cmd ret p c
+	DEBUG "function=stop_profile( $@ )"
 	c="${PROFILE_CURRENT:-$(current_profile ${1})}"
 	[ -n "${c}" ] && p="${c}" || return 0
 
@@ -278,6 +293,7 @@ stop_profile()
 revert_profile()
 {
 	local file="${RUNDIR}/${PACKAGE}:${1}-previous" p
+	DEBUG "function=revert_profile( $@ )"
 	if [ -s "${file}" ]; then
 		read p <${file}
 	else
@@ -292,6 +308,7 @@ revert_profile()
 profile_type()
 {
 	local f t
+	DEBUG "function=profile_type( $@ )"
 	for f in ${PROFILE_DIR}/*-functions; do
 		t="${f##*/}"
 		printf "${t%-*} "
@@ -312,6 +329,7 @@ profile_type()
 swap_files()
 {
 	local src dest
+	DEBUG "function=swap_files( $@ )"
 	for src in $(find "${PROFILE_DIR}/${1}" -name "*.${2}"); do
 		dest="${src#${PROFILE_DIR}/${1}}"; dest="${dest%.${2}}"
 		if [ -e "${dest}" ] && [ ! -h "${dest}" ]; then
@@ -331,6 +349,7 @@ swap_files()
 start_profile()
 {
 	local cmd ret
+	DEBUG "function=start_profile( $@ )"
 	begin "Starting ${1}.${2} profile"
 	for cmd in start_pre start_${2} start_post; do
 		run_cmd "${cmd}" "${2}"
@@ -352,6 +371,7 @@ start_profile()
 profile()
 {
 	local PROFILE_CURRENT PROFILE_DEFAULT PROFILE_FILE PROFILE_NAME PROFILE_TYPE
+	DEBUG "function=profile( $@ )"
 	set ${@/./ }
 	PROFILE_NAME="${2}"
 	PROFILE_TYPE="${1}"
@@ -371,15 +391,17 @@ profile()
 }
 
 [ ${#} -ge 1 ] || help_message 2
+PROFILE_DEBUG=false
 ARGS="$(getopt \
-	-l debug,force,help,version,profile:,type,current:,list:,stop:,revert,user: \
-	-o \?dfhvtc:p:l:s:r:u: -n ${PACKAGE} -s sh -- "${@}")"
+	-l debug,force,help,trace,version,profile:,type,current:,list:,stop:,revert,user: \
+	-o \?dfhvtc:p:l:s:r:u:x -n ${PACKAGE} -s sh -- "${@}")"
 [ ${?} = 0 ] || help_message 1
 eval set -- "${ARGS}"
 
 while true; do
 	case "${1}" in
-		(-d|--debug) set -x ; shift;;
+		(-d|--debug) PROFILE_DEBUG=true ; shift;;
+		(-x|--trace) set -x ; shift;;
 		(-f|--force) PROFILE_FORCE=1; shift;;
 		('-?'|-h|--help) help_message 0;;
 		(-v|--version) version_message;;
