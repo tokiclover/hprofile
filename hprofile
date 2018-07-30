@@ -223,11 +223,12 @@ verify_profile()
 profile_default()
 {
 	DEBUG "function=profile_default( $@ )"
-	run_cmd start_test && return
-	if [ -n "${PROFILE_DEFAULT:-$DEFAULT}" ]; then
-		printf "${PROFILE_DDEFAULT:-$DEFAULT}"
+	PROFILE_DEFAULT="$(run_cmd start_test 2>${NULL})"
+	if [ -z "${PROFILE_DEFAULT}" ]; then
+		set -- "${PROFILES}"
+		printf "${1}"
 	else
-		printf "${PROFILES%% *}"
+		printf "${PROFILE_DEFAULT}"
 	fi
 }
 
@@ -375,10 +376,11 @@ profile()
 	set ${@/./ }
 	PROFILE_NAME="${2}"
 	PROFILE_TYPE="${1}"
+:	${PROFILE_DEFAUL:-$DEFAULT}
 
 	[ -n "${PROFILE_TYPE}" ] || die "Empty/null profile type"
 	verify_profile "${PROFILE_TYPE}" || die "Invalid profile type"
-	[ -n "${PROFILE_NAME}" ] || PROFILE_NAME=$(profile_default "${PROFILE_TYPE}")
+	[ -n "${PROFILE_NAME}" ] || PROFILE_NAME="${PROFILE_DEFAULT:-$(profile_default)}"
 	[ -n "${PROFILE_NAME}" ] || die "Could not find ${PROFILE_NAME} profile ${PROFILE_TYPE}"
 
 	PROFILE_CURRENT=$(current_profile "${PROFILE_TYPE}")
