@@ -11,12 +11,19 @@ ata()
 }
 usb()
 {
-	local dev val
+	local arg dev val
 	for dev in /sys/devices/pci*/*/usb*/*/*/host*/target*/*/block/*sd[a-z]; do
 		read val <${dev}/removable
 		case "${val}" in
 			(1) echo noop >${dev}/queue/scheduler;;
-			(0) echo cfq  >${dev}/queue/scheduler;;
+			(0)
+				for arg in bfq cfq; do
+					if grep -qws "${arg}" ${dev}/queue/scheduler; then
+						echo "${arg}"  >${dev}/queue/scheduler
+						break
+					fi
+				done
+			;;
 		esac
 	done
 }
@@ -45,9 +52,14 @@ start_test()
 
 start_post()
 {
-	local dev
+	local arg dev
 	for dev in $(ata); do
-    	echo cfq  >${dev}/queue/scheduler
+		for arg in bfq cfq; do
+			if grep -qws "${arg}" ${dev}/queue/scheduler; then
+				echo "${arg}"  >${dev}/queue/scheduler
+				break
+			fi
+		done
     	# NCQ opitmizations
     	echo 31   >${dev}/queue/nr_requests
     	echo 2    >${dev}/device/queue_depth
