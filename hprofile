@@ -388,7 +388,6 @@ profile()
 
 [ ${#} -ge 1 ] || help_message 2
 PROFILE_DEBUG=false
-trap profile_save EXIT
 ARGS="$(getopt \
 	-l debug,force,help,trace,version,profile:,type,current:,list:,stop:,revert,user: \
 	-o \?dfhvtc:p:l:s:r:u:x -n ${PACKAGE} -s sh -- "${@}")"
@@ -429,6 +428,7 @@ while true; do
 	esac
 done
 
+trap profile_save EXIT
 profile "${@}"
 
 #
