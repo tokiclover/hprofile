@@ -1,3 +1,9 @@
+6.2.1:
+
+Two fixes:
+Make hprofile to not change the profile state file for nothing;
+And print a single profile for vga profile;
+
 6.2.0:
 
 Random fixes; major refactorization of {current,previous} profiles handling;
