@@ -10,12 +10,11 @@
 if [ -n "${ZSH_VERSION}" ]; then
 	emulate sh
 	setopt SH_WORD_SPLIT
-	setopt EXTENDED_GLOB NULL_GLOB
+	setopt NULL_GLOB
 	disable -r end
 	NULLCMD=:
 elif [ -n "${BASH_VERSION}" ]; then
 	shopt -qs nullglob
-	shopt -qs extglob
 fi
 
 PACKAGE=hprofile
@@ -259,8 +258,10 @@ profile_default()
 run_cmd()
 {
 	DEBUG "function=run_cmd( $@ )"
-	local CMD="${1}"; shift
+	local CMD="${1}"
+	shift
 	if command -v ${CMD} >${NULL} 2>&1; then
+		DEBUG "command=${CMD}( ${@} )"
 		eval ${CMD} "${@}"
 	else
 		return 111
@@ -296,16 +297,14 @@ stop_profile()
 #
 profile_type()
 {
-	local f t
+	local f t o="${PWD}"
 	DEBUG "function=profile_type( $@ )"
-	for f in ${PROFILE_DIR}/*-functions; do
-		t="${f##*/}"
+	cd ${PROFILE_DIR}
+	for f in *-functions */functions; do
+		t="${f%/functions}"
 		printf "${t%-*} "
 	done
-	for f in ${PROFILE_DIR}/*/functions; do
-		t="${f%/functions}"
-		printf "${t##*/} "
-	done
+	cd "${o}"
 	echo
 	exit
 }
